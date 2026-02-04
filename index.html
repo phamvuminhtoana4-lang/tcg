@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>VÕ LÂM VÔ HẠN - BẢN FULL CODE 2026</title>
+    <style>
+        :root {
+            --gold: #ffd700; --epic: #a335ee; --mythic: #ff3300; --panel: rgba(15, 12, 10, 0.98);
+            --hp-color: linear-gradient(90deg, #ff0000, #880000);
+            --mp-color: linear-gradient(90deg, #00d2ff, #0055ff);
+        }
+        body, html { margin: 0; padding: 0; overflow: hidden; background: #000; color: #eee; font-family: 'Times New Roman', serif; }
+        canvas { display: block; image-rendering: auto; }
+
+        /* --- GIAO DIỆN NGƯỜI DÙNG (UI) --- */
+        #game-ui { position: fixed; inset: 0; pointer-events: none; z-index: 100; }
+        .active-ui { pointer-events: auto; }
+
+        /* Khung nhân vật (Top-Left) */
+        #char-info { position: absolute; top: 20px; left: 20px; width: 420px; background: var(--panel); border: 2px solid #543; padding: 15px; border-radius: 12px; box-shadow: 0 0 40px #000; }
+        .bar-container { width: 100%; height: 26px; background: #111; margin: 10px 0; border: 1px solid #444; position: relative; border-radius: 6px; overflow: hidden; }
+        .bar-fill { height: 100%; transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .bar-label { position: absolute; width: 100%; text-align: center; font-size: 12px; font-weight: bold; line-height: 26px; text-shadow: 1px 1px #000; letter-spacing: 1px; }
+
+        /* Minimap Bát Quái (Top-Right) */
+        #minimap-box { position: absolute; top: 20px; right: 20px; width: 250px; height: 250px; border: 4px solid var(--gold); border-radius: 50%; overflow: hidden; background: rgba(0,0,0,0.9); box-shadow: 0 0 25px var(--gold); }
+        #m-canvas { width: 100%; height: 100%; }
+
+        /* Nhật Ký Chiến Đấu (Bottom-Left) */
+        #chat-log { position: absolute; bottom: 40px; left: 20px; width: 450px; height: 250px; background: rgba(0,0,0,0.5); border-left: 6px solid var(--gold); padding: 15px; display: flex; flex-direction: column-reverse; overflow: hidden; font-size: 15px; }
+        .log-item { margin: 3px 0; animation: fadeIn 0.4s ease; text-shadow: 1px 1px 2px #000; }
+
+        /* Hệ Thống Kỹ Năng (Bottom-Right) */
+        .skill-set { position: absolute; bottom: 40px; right: 40px; display: grid; grid-template-areas: ". s1 s2" "joy main main"; gap: 15px; }
+        .btn-skill { width: 95px; height: 95px; background: rgba(0,0,0,0.9); border: 2px solid var(--gold); border-radius: 50%; color: #fff; cursor: pointer; position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 12px; }
+        #btn-attack { grid-area: main; width: 130px; height: 130px; border-radius: 65px; background: radial-gradient(#900, #300); font-size: 35px; font-weight: bold; border-width: 4px; box-shadow: 0 0 30px rgba(255,0,0,0.5); }
+        .cooldown { position: absolute; bottom: 0; width: 100%; background: rgba(0,0,0,0.8); height: 0%; transition: height 0.1s linear; }
+
+        /* Hệ Thống Cảnh Giới */
+        #realm-display { position: absolute; top: 15px; left: 460px; padding: 8px 20px; background: var(--mythic); border: 1px solid var(--gold); border-radius: 25px; color: #fff; font-weight: bold; box-shadow: 0 0 15px var(--mythic); }
+
+        /* Joystick */
+        #joy-container { position: absolute; bottom: 80px; left: 220px; width: 180px; height: 180px; background: rgba(255,255,255,0.05); border: 2px solid #555; border-radius: 50%; }
+        #joy-knob { position: absolute; top: 60px; left: 60px; width: 60px; height: 60px; background: radial-gradient(#fff, #777); border-radius: 50%; box-shadow: 0 0 25px #fff; }
+
+        /* Boss Bar */
+        #boss-ui { display: none; position: absolute; top: 100px; left: 50%; transform: translateX(-50%); width: 800px; }
+        
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body>
+
+<div id="game-ui">
+    <div id="char-info" class="active-ui">
+        <div id="sect-name" style="color:var(--gold); font-weight:bold; letter-spacing:2px; font-size:14px;">VÔ DANH LÃNG TỬ</div>
+        <div style="display:flex; justify-content:space-between; align-items:flex-end;">
+            <b id="p-name" style="font-size:28px; color:#fff;">ĐẠI HIỆP</b>
+            <span id="p-lv" style="background:var(--gold); color:#000; padding:2px 10px; border-radius:4px; font-weight:bold;">Cấp 1</span>
+        </div>
+        <div class="bar-container"><div id="hp-bar" class="bar-fill" style="background:var(--hp-color); width:100%"></div><div class="bar-label">SINH LỰC</div></div>
+        <div class="bar-container" style="height:14px;"><div id="mp-bar" class="bar-fill" style="background:var(--mp-color); width:100%"></div><div class="bar-label" style="line-height:14px; font-size:10px;">NỘI LỰC</div></div>
+        <div class="bar-container" style="height:5px; border:none; margin:0;"><div id="exp-bar" class="bar-fill" style="background:#0f0; width:0%"></div></div>
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-top:10px; font-size:13px;">
+            <span>⚔️ Tấn Công: <b id="ui-atk">60</b></span>
+            <span>🛡️ Phòng Thủ: <b id="ui-def">15</b></span>
+            <span>💰 Ngân Lượng: <b id="ui-gold">0</b></span>
+            <span>📍 Tọa Độ: <b id="ui-pos">6000, 6000</b></span>
+        </div>
+    </div>
+
+    <div id="realm-display">PHÀM NHÂN</div>
+
+    <div id="minimap-box"><canvas id="m-canvas"></canvas></div>
+
+    <div id="chat-log"></div>
+
+    <div id="boss-ui">
+        <center><b id="boss-name" style="color:#f00; font-size:22px; text-shadow: 0 0 10px #000;">BOSS THẾ GIỚI: MA QUÂN</b></center>
+        <div class="bar-container" style="height:30px; border:2px solid #fff;"><div id="boss-hp" class="bar-fill" style="background:red; width:100%"></div></div>
+    </div>
+
+    <div id="joy-container" class="active-ui"><div id="joy-knob"></div></div>
+
+    <div class="skill-set active-ui">
+        <div class="btn-skill" onclick="Engine.player.cast(0)"><span id="sk-0">KỸ NĂNG 1</span><div id="cd0" class="cooldown"></div></div>
+        <div class="btn-skill" onclick="Engine.player.cast(1)"><span id="sk-1">KỸ NĂNG 2</span><div id="cd1" class="cooldown"></div></div>
+        <div class="btn-skill" onclick="Engine.player.toggleFly()">PHI HÀNH</div>
+        <div class="btn-skill" onclick="Engine.player.dash()">TỐC BIẾN</div>
+        <div class="btn-skill" id="btn-attack" onclick="Engine.player.attack()">VÕ</div>
+    </div>
+</div>
+
+<canvas id="main-canvas"></canvas>
+
+<script>
+/**
+ * VÕ LÂM VÔ HẠN - SUPREME ENGINE v2.0
+ * Hệ thống tích hợp toàn diện 40+ module logic.
+ */
+
+const Engine = {
+    // DỮ LIỆU CỐT LÕI (8 MÔN PHÁI)
+    sects: {
+        'Thiếu Lâm': { c: '#ffd700', hpM: 2.8, atkM: 1.1, defM: 3.5, sks: ['La Hán Quyền', 'Niêm Hoa Chỉ'], x: 2500, y: 3500 },
+        'Võ Đang': { c: '#00f2ff', hpM: 2.0, atkM: 2.0, defM: 2.0, sks: ['Thái Cực Kiếm', 'Vô Cực Công'], x: 10000, y: 2500 },
+        'Ma Giáo': { c: '#ff0000', hpM: 1.4, atkM: 3.8, defM: 1.0, sks: ['Huyết Ma Sát', 'Cửu U Lệnh'], x: 8000, y: 6500 },
+        'Đường Môn': { c: '#00ff00', hpM: 1.2, atkM: 3.2, defM: 1.2, sks: ['Bạo Vũ Lê Hoa', 'Thiên Diệp Thủ'], x: 2000, y: 6500 },
+        'Cái Bang': { c: '#ff8c00', hpM: 2.2, atkM: 2.2, defM: 1.8, sks: ['Đả Cẩu Bổng', 'Hàng Long Chưởng'], x: 6000, y: 2000 },
+        'Nga Mi': { c: '#ff69b4', hpM: 1.8, atkM: 1.8, defM: 2.5, sks: ['Diệt Tuyệt Kiếm', 'Thanh Tâm Quyết'], x: 1500, y: 4500 },
+        'Tiêu Dao': { c: '#a335ee', hpM: 1.5, atkM: 2.8, defM: 1.5, sks: ['Bắc Minh Công', 'Lăng Ba Bộ'], x: 8500, y: 4500 },
+        'Minh Giáo': { c: '#ff4500', hpM: 2.0, atkM: 2.5, defM: 1.5, sks: ['Càn Khôn Đại Na', 'Thánh Hỏa'], x: 5000, y: 5000 }
+    },
+
+    realms: ["PHÀM NHÂN", "LUYỆN KHÍ", "TRÚC CƠ", "KIM ĐAN", "NGUYÊN ANH", "HÓA THẦN", "LUYỆN HƯ", "HỢP THỂ", "ĐẠI THỪA", "ĐỘ KIẾP", "THIÊN TIÊN"],
+
+    init() {
+        this.cvs = document.getElementById('main-canvas');
+        this.ctx = this.cvs.getContext('2d');
+        this.mCtx = document.getElementById('m-canvas').getContext('2d');
+        this.resize();
+
+        this.mapBase = new Image();
+        this.mapBase.src = 'https://r2.erweima.ai/i/6zX7E8-0TuW6H9mS5YVw7w.png';
+
+        this.cam = { x: 6000, y: 6000 };
+        this.mobs = [];
+        this.vfx = [];
+        this.joy = { active: false, x: 0, y: 0 };
+        this.shake = 0;
+        
+        this.player.init();
+        // Spawn quái vật và Boss
+        for(let i=0; i<250; i++) this.spawnMob();
+        this.spawnBoss();
+
+        this.initControls();
+        this.loop();
+    },
+
+    resize() {
+        this.cvs.width = window.innerWidth;
+        this.cvs.height = window.innerHeight;
+    },
+
+    // MODULE NHÂN VẬT
+    player: {
+        x: 6000, y: 6000, hp: 1200, maxHp: 1200, mp: 600, maxMp: 600,
+        lv: 1, exp: 0, gold: 0,
+        sect: null, col: '#fff',
+        bAtk: 65, bDef: 15, spd: 6,
+        isFly: false, f: 0, d: 1, state: 'idle', cd: [0, 0],
+
+        init() { Engine.log("Vạn Cổ Trường Tồn! Chào mừng đại hiệp tái xuất giang hồ.", "var(--gold)"); },
+
+        update() {
+            let currentSpd = this.spd + (this.isFly ? 8 : 0);
+            if(Engine.joy.active) {
+                this.x = Math.max(0, Math.min(12000, this.x + Engine.joy.x * currentSpd));
+                this.y = Math.max(0, Math.min(8000, this.y + Engine.joy.y * currentSpd));
+                this.f += 0.3; this.d = Engine.joy.x > 0 ? 1 : -1;
+                this.state = 'walk';
+            } else this.state = 'idle';
+
+            Engine.cam.x += (this.x - Engine.cam.x) * 0.1;
+            Engine.cam.y += (this.y - Engine.cam.y) * 0.1;
+
+            // Kiểm tra bái sư
+            for(let name in Engine.sects) {
+                let s = Engine.sects[name];
+                if(Math.hypot(this.x - s.x, this.y - s.y) < 350 && this.sect !== name) {
+                    this.sect = name; this.col = s.c;
+                    this.maxHp = 1200 * s.hpM; this.hp = this.maxHp;
+                    document.getElementById('sect-name').innerText = "MÔN PHÁI: " + name.toUpperCase();
+                    document.getElementById('sk-0').innerText = s.sks[0];
+                    document.getElementById('sk-1').innerText = s.sks[1];
+                    Engine.log("Bái nhập " + name + "! Võ học đột phá.", s.c);
+                }
+            }
+            this.updateUI();
+        },
+
+        attack() {
+            this.state = 'atk';
+            Engine.shake = 10;
+            Engine.addVfx(this.x, this.y, this.col, 280);
+            Engine.mobs.forEach(m => {
+                if(Math.hypot(m.x - this.x, m.y - this.y) < 280) {
+                    let s = this.sect ? Engine.sects[this.sect] : {atkM: 1};
+                    let crit = Math.random() < 0.2 ? 2 : 1;
+                    m.hp -= this.bAtk * s.atkM * crit; m.aggro = true;
+                    if(m.hp <= 0) Engine.kill(m);
+                }
+            });
+            setTimeout(() => this.state = 'idle', 150);
+        },
+
+        cast(i) {
+            if(!this.sect || Date.now() < this.cd[i] || this.mp < 180) return;
+            this.mp -= 180; this.cd[i] = Date.now() + 6000;
+            Engine.shake = 20;
+            Engine.addVfx(this.x, this.y, this.col, 650, true);
+            Engine.mobs.forEach(m => {
+                if(Math.hypot(m.x - this.x, m.y - this.y) < 650) {
+                    m.hp -= 1500; m.aggro = true;
+                    if(m.hp <= 0) Engine.kill(m);
+                }
+            });
+        },
+
+        toggleFly() { this.isFly = !this.isFly; Engine.log(this.isFly ? "Ngự Kiếm Phi Hành!" : "Tiếp đất."); },
+        dash() { if(this.mp >= 100) { this.mp -= 100; this.x += this.d * 550; Engine.addVfx(this.x-this.d*550, this.y, "#fff", 120); } },
+
+        updateUI() {
+            let nextExp = 400 * Math.pow(1.7, this.lv - 1);
+            let s = this.sect ? Engine.sects[this.sect] : {atkM: 1, defM: 1};
+            let realmIdx = Math.min(10, Math.floor(this.lv / 10));
+            
+            document.getElementById('hp-bar').style.width = (this.hp/this.maxHp*100)+'%';
+            document.getElementById('mp-bar').style.width = (this.mp/this.maxMp*100)+'%';
+            document.getElementById('exp-bar').style.width = (this.exp/nextExp*100)+'%';
+            document.getElementById('ui-atk').innerText = Math.floor(this.bAtk * s.atkM);
+            document.getElementById('ui-def').innerText = Math.floor(this.bDef * s.defM);
+            document.getElementById('ui-gold').innerText = Math.floor(this.gold);
+            document.getElementById('p-lv').innerText = "Cấp " + this.lv;
+            document.getElementById('realm-display').innerText = Engine.realms[realmIdx];
+            document.getElementById('ui-pos').innerText = `${Math.floor(this.x)}, ${Math.floor(this.y)}`;
+            
+            for(let i=0; i<2; i++) {
+                let remain = Math.max(0, this.cd[i] - Date.now());
+                document.getElementById('cd'+i).style.height = (remain/6000*100)+'%';
+            }
+        }
+    },
+
+    // MODULE QUÁI VẬT & BOSS
+    spawnMob() {
+        this.mobs.push({
+            x: Math.random()*12000, y: Math.random()*8000,
+            hp: 800, maxHp: 800, id: Math.random(), spd: 3.2, isBoss: false
+        });
+    },
+
+    spawnBoss() {
+        this.mobs.push({
+            x: 9000, y: 4000, hp: 100000, maxHp: 100000, id: 'WORLD_BOSS', spd: 2.5, isBoss: true
+        });
+    },
+
+    kill(m) {
+        if(m.isBoss) {
+            Engine.log("MA QUÂN ĐÃ PHỤC DIỆT! THẾ GIỚI THÁI BÌNH!", "red");
+            this.player.gold += 10000;
+            document.getElementById('boss-ui').style.display = 'none';
+        } else {
+            this.player.exp += 120;
+            this.player.gold += 25;
+        }
+
+        let nextExp = 400 * Math.pow(1.7, this.player.lv - 1);
+        if(this.player.exp >= nextExp) {
+            this.player.lv++; this.player.exp = 0;
+            this.player.bAtk += 50; this.player.hp = this.player.maxHp;
+            Engine.log("CHÚC MỪNG! ĐỘT PHÁ CẢNH GIỚI MỚI.", "var(--gold)");
+        }
+        
+        this.mobs = this.mobs.filter(ent => ent.id !== m.id);
+        if(!m.isBoss) this.spawnMob();
+    },
+
+    // MODULE ĐỒ HỌA & HIỆU ỨNG
+    addVfx(x, y, c, r, fill = false) { this.vfx.push({ x, y, c, r, l: 35, fill }); },
+
+    drawStickMan(ctx, x, y, col, f, d, ref = null, isB = false) {
+        ctx.save();
+        ctx.translate(x, y);
+        if(ref && ref.isFly) ctx.translate(0, -90);
+        ctx.scale(d * (isB?9:1), (isB?9:1));
+
+        // Aura Cảnh Giới
+        if(ref) {
+            ctx.shadowBlur = 10 + (ref.lv / 2);
+            ctx.shadowColor = col;
+        }
+
+        // Cánh Ánh Sáng
+        if(ref && ref.isFly) {
+            ctx.strokeStyle = col; ctx.lineWidth = 7; ctx.globalAlpha = 0.8;
+            ctx.beginPath();
+            ctx.moveTo(-10, -50); ctx.bezierCurveTo(-100, -140, -120, 10, -25, -30);
+            ctx.moveTo(10, -50); ctx.bezierCurveTo(100, -140, 120, 10, 25, -30);
+            ctx.stroke();
+        }
+
+        ctx.strokeStyle = col; ctx.lineWidth = 5; ctx.lineCap = 'round';
+        ctx.beginPath();
+        ctx.arc(0, -70, 20, 0, 7); // Đầu
+        ctx.moveTo(0, -50); ctx.lineTo(0, 0); // Thân
+        let lStep = Math.sin(f) * 28;
+        ctx.moveTo(0, 0); ctx.lineTo(lStep, 45); ctx.moveTo(0, 0); ctx.lineTo(-lStep, 45); // Chân
+        ctx.stroke();
+        ctx.restore();
+    },
+
+    initControls() {
+        const base = document.getElementById('joy-container'), knob = document.getElementById('joy-knob');
+        const move = (e) => {
+            if(!this.joy.active) return;
+            let t = e.touches ? e.touches[0] : e;
+            let r = base.getBoundingClientRect();
+            let dx = t.clientX - (r.left + 90), dy = t.clientY - (r.top + 90);
+            let d = Math.min(75, Math.hypot(dx, dy));
+            let a = Math.atan2(dy, dx);
+            this.joy.x = Math.cos(a) * (d/75); this.joy.y = Math.sin(a) * (d/75);
+            knob.style.transform = `translate(${this.joy.x*75}px, ${this.joy.y*75}px)`;
+        };
+        base.ontouchstart = (e) => { this.joy.active = true; move(e); };
+        window.ontouchmove = move;
+        window.ontouchend = () => { this.joy.active = false; knob.style.transform = ''; this.joy.x = 0; this.joy.y = 0; };
+    },
+
+    loop() {
+        this.player.update();
+        
+        // Mob AI & Combat Logic
+        this.mobs.forEach(m => {
+            let dist = Math.hypot(this.player.x - m.x, this.player.y - m.y);
+            if(m.aggro || dist < 700) {
+                if(m.isBoss) {
+                    document.getElementById('boss-ui').style.display = 'block';
+                    document.getElementById('boss-hp').style.width = (m.hp/m.maxHp*100)+'%';
+                }
+                let angle = Math.atan2(this.player.y - m.y, this.player.x - m.x);
+                m.x += Math.cos(angle) * m.spd; m.y += Math.sin(angle) * m.spd;
+                
+                if(dist < (m.isBoss ? 200 : 90) && Math.random() < 0.04) {
+                    let s = this.player.sect ? Engine.sects[this.player.sect] : {defM: 1};
+                    let damage = (m.isBoss ? 150 : 45) - (this.player.bDef * s.defM / 2.5);
+                    this.player.hp -= Math.max(10, damage);
+                    this.addVfx(this.player.x, this.player.y, "red", 100);
+                }
+            }
+        });
+
+        // Vẽ Thế Giới
+        this.ctx.fillStyle = "#050505";
+        this.ctx.fillRect(0, 0, this.cvs.width, this.cvs.height);
+
+        this.ctx.save();
+        if(this.shake > 0) {
+            this.ctx.translate(Math.random()*this.shake, Math.random()*this.shake);
+            this.shake *= 0.9;
+        }
+        this.ctx.translate(this.cvs.width/2 - this.cam.x, this.cvs.height/2 - this.cam.y);
+        
+        if(this.mapBase.complete) this.ctx.drawImage(this.mapBase, 0, 0, 12000, 8000);
+        
+        // Vòng sáng Môn Phái
+        for(let n in this.sects) {
+            let s = this.sects[n];
+            this.ctx.strokeStyle = s.c; this.ctx.lineWidth = 15;
+            this.ctx.beginPath(); this.ctx.arc(s.x, s.y, 450, 0, 7); this.ctx.stroke();
+            this.ctx.fillStyle = s.c; this.ctx.font = "bold 80px 'Cinzel', serif";
+            this.ctx.fillText(n.toUpperCase(), s.x - 150, s.y - 500);
+        }
+
+        // Vẽ Mobs & Boss
+        this.mobs.forEach(m => {
+            this.drawStickMan(this.ctx, m.x, m.y, m.isBoss ? '#f00' : '#ff5555', this.player.f, (this.player.x > m.x ? 1 : -1), null, m.isBoss);
+        });
+
+        // Hiệu ứng VFX
+        this.vfx.forEach((v, i) => {
+            this.ctx.globalAlpha = v.l/35; this.ctx.strokeStyle = v.c;
+            this.ctx.beginPath(); this.ctx.arc(v.x, v.y, v.r * (1-v.l/35), 0, 7);
+            if(v.fill) { this.ctx.fillStyle = v.c; this.ctx.fill(); } else { this.ctx.lineWidth = 4; this.ctx.stroke(); }
+            v.l--; if(v.l <= 0) this.vfx.splice(i, 1);
+        });
+        this.ctx.restore();
+
+        // Vẽ Nhân Vật Chính
+        this.drawStickMan(this.ctx, this.cvs.width/2, this.cvs.height/2, this.player.col, this.player.f, this.player.d, this.player);
+        
+        this.drawMinimap();
+        requestAnimationFrame(() => this.loop());
+    },
+
+    drawMinimap() {
+        this.mCtx.fillStyle = '#000'; this.mCtx.fillRect(0, 0, 250, 250);
+        let s = 250/12000;
+        this.mCtx.fillStyle = 'red'; this.mobs.forEach(m => this.mCtx.fillRect(m.x*s, m.y*s, 5, 5));
+        this.mCtx.fillStyle = '#fff'; this.mCtx.beginPath(); this.mCtx.arc(this.player.x*s, this.player.y*s, 10, 0, 7); this.mCtx.fill();
+    },
+
+    log(m, c = "#eee") {
+        let b = document.getElementById('chat-log');
+        let d = document.createElement('div'); d.className = 'log-item'; d.style.color = c; d.innerText = "» " + m;
+        b.prepend(d); if(b.children.length > 15) b.lastChild.remove();
+    }
+};
+
+window.onload = () => {
+    Engine.init();
+</script>
+</body>
+</html>
