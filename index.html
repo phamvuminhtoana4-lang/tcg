@@ -3,317 +3,256 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, orientation=landscape">
-    <title>VÕ LÂM STICKMAN - THIÊN HẠ VÔ SONG</title>
+    <title>VÕ LÂM SUPREME: THIÊN ĐẠO VÔ HẠN</title>
     <style>
-        :root { 
-            --gold: #FFD700; --hp: #ff3232; --mp: #3296ff; --st: #32ff32; --exp: #cc32ff; 
-            --kim: #f0f0f0; --moc: #2ecc71; --thuy: #3498db; --hoa: #e74c3c; --tho: #f1c40f;
-        }
-        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #000; font-family: 'Tahoma', sans-serif; -webkit-user-select: none; }
+        :root { --gold: #FFD700; --hp: #ff3232; --exp: #cc32ff; --bg: #050505; }
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: var(--bg); font-family: 'Tahoma', sans-serif; color: #eee; }
 
-        /* WORLD MAP */
-        #viewport { position: relative; width: 100vw; height: 100vh; overflow: hidden; background: #0a0a0a; }
-        #game-map { 
-            position: absolute; width: 20000px; height: 20000px; 
-            background: #111 url('https://www.transparenttextures.com/patterns/dark-leather.png');
-            transition: transform 0.1s linear;
-        }
+        /* WORLD ENGINE 80.000px */
+        #viewport { position: relative; width: 100vw; height: 100vh; overflow: hidden; }
+        #game-map { position: absolute; width: 80000px; height: 80000px; background: #0a0a0a url('https://www.transparenttextures.com/patterns/dark-matter.png'); transition: transform 0.15s linear; }
 
-        /* STICKMAN RENDERER */
+        /* TÔNG MÔN LÃNH THỔ */
+        .sect-zone { position: absolute; border: 30px solid rgba(255,215,0,0.03); border-radius: 50%; display: flex; align-items: center; justify-content: center; pointer-events: none; }
+        .sect-name { font-size: 300px; color: rgba(255,215,0,0.015); font-weight: 900; white-space: nowrap; }
+
+        /* NHÂN VẬT CHÍNH */
         .stickman { position: absolute; width: 40px; height: 60px; z-index: 100; pointer-events: none; }
-        .head { position: absolute; width: 16px; height: 16px; border: 2px solid #fff; border-radius: 50%; top: 0; left: 12px; background: #000; box-shadow: 0 0 10px rgba(255,255,255,0.5); }
-        .body { position: absolute; width: 2px; height: 24px; background: #fff; top: 18px; left: 19px; }
-        .arm { position: absolute; width: 20px; height: 2px; background: #fff; top: 22px; transform-origin: left; transition: 0.1s; }
-        .arm.l { left: 19px; transform: rotate(140deg); }
-        .arm.r { left: 19px; transform: rotate(-40deg); }
-        .leg { position: absolute; width: 20px; height: 2px; background: #fff; top: 40px; transform-origin: left; }
-        .leg.l { left: 19px; transform: rotate(110deg); }
-        .leg.r { left: 19px; transform: rotate(70deg); }
-        .weapon-obj { position: absolute; width: 35px; height: 4px; background: var(--gold); top: -2px; left: 18px; transform: rotate(90deg); box-shadow: 0 0 15px var(--gold); border-radius: 2px; display: none; }
+        .head { position: absolute; width: 18px; height: 18px; border: 2px solid #fff; border-radius: 50%; top: 0; left: 11px; background: #000; box-shadow: 0 0 10px rgba(255,255,255,0.5); }
+        .body { position: absolute; width: 2px; height: 26px; background: #fff; top: 18px; left: 19px; }
+        .arm, .leg { position: absolute; width: 22px; height: 2px; background: #fff; top: 22px; left: 19px; transform-origin: left; }
+        .leg { top: 44px; }
+        .weapon { position: absolute; width: 35px; height: 3px; background: var(--gold); top: -1px; left: 18px; transform: rotate(90deg); box-shadow: 0 0 15px var(--gold); display: none; }
 
-        /* ANIMATIONS */
-        .moving .leg.l { animation: walk 0.25s infinite alternate; }
-        .moving .leg.r { animation: walk 0.25s infinite alternate-reverse; }
-        @keyframes walk { from { transform: rotate(140deg); } to { transform: rotate(40deg); } }
-        .attacking .arm.r { animation: slash 0.2s; }
-        @keyframes slash { 0% { transform: rotate(-40deg); } 50% { transform: rotate(80deg); } 100% { transform: rotate(-40deg); } }
+        /* HIỆU ỨNG CHIÊU THỨC */
+        .fx-ring { position: absolute; border-radius: 50%; border: 4px solid var(--gold); animation: expand 0.6s ease-out forwards; pointer-events: none; }
+        @keyframes expand { from { transform: scale(0); opacity: 1; } to { transform: scale(10); opacity: 0; } }
 
-        /* NPC & ENTITIES */
-        .entity-tag { position: absolute; top: -55px; width: 150px; text-align: center; left: -55px; }
-        .name { font-weight: bold; font-size: 13px; text-shadow: 1px 1px 2px #000; }
-        .rank { font-size: 10px; color: #fff; background: rgba(0,0,0,0.5); padding: 1px 4px; border-radius: 4px; }
-        .mob .head { border-color: #ff4444; }
-        .boss { scale: 2.5; filter: drop-shadow(0 0 20px red); }
+        /* UI HỆ THỐNG */
+        .ui { position: fixed; background: rgba(0,0,0,0.9); border: 2px solid var(--gold); border-radius: 12px; padding: 15px; z-index: 1000; }
+        .status { top: 20px; left: 20px; width: 280px; }
+        .mini-map { top: 20px; right: 350px; width: 160px; height: 160px; border: 1px solid #555; overflow: hidden; }
+        #m-dot { position: absolute; width: 6px; height: 6px; background: red; border-radius: 50%; box-shadow: 0 0 5px red; }
+        .rankings { top: 20px; right: 20px; width: 300px; max-height: 300px; }
 
-        /* UI MOBILE */
-        .top-ui { position: fixed; top: 15px; left: 15px; z-index: 1000; display: flex; gap: 15px; }
-        .p-avatar { width: 60px; height: 60px; border: 3px solid var(--gold); border-radius: 12px; background: #222; overflow: hidden; }
-        .p-bars { width: 220px; }
-        .bar { width: 100%; height: 14px; background: #333; margin-bottom: 5px; border-radius: 7px; border: 1px solid #000; position: relative; }
-        .fill { height: 100%; transition: width 0.3s linear; border-radius: 7px; }
-        .bar-txt { position: absolute; width: 100%; text-align: center; font-size: 9px; line-height: 14px; color: #fff; font-weight: bold; }
+        /* CƠ DUYÊN PANEL */
+        #invite-ui { 
+            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); 
+            width: 450px; background: #151515; border: 5px ridge var(--gold); 
+            padding: 30px; text-align: center; display: none; z-index: 2000; box-shadow: 0 0 50px #000;
+        }
+        .btn-choice { padding: 12px 30px; margin: 15px; font-weight: bold; cursor: pointer; border: none; border-radius: 8px; font-size: 16px; }
+        .btn-accept { background: var(--gold); color: #000; }
+        .btn-decline { background: #444; color: #fff; }
 
         /* CONTROLS */
-        #joy-zone { position: fixed; bottom: 50px; left: 50px; width: 140px; height: 140px; background: rgba(255,255,255,0.05); border: 2px solid rgba(255,255,255,0.2); border-radius: 50%; z-index: 1000; }
-        #joy-stick { position: absolute; width: 60px; height: 60px; background: rgba(255,255,255,0.2); border-radius: 50%; top: 40px; left: 40px; border: 2px solid #fff; }
-        .btn-atk { position: fixed; bottom: 50px; right: 50px; width: 100px; height: 100px; background: rgba(231, 76, 60, 0.6); border: 4px solid #fff; border-radius: 50%; color: #fff; font-size: 20px; font-weight: bold; z-index: 1000; box-shadow: 0 0 20px rgba(0,0,0,0.5); }
-        .btn-sub { position: fixed; bottom: 60px; right: 160px; width: 60px; height: 60px; background: rgba(0,0,0,0.7); border: 2px solid var(--gold); border-radius: 50%; color: var(--gold); font-size: 10px; z-index: 1000; }
-
-        /* DIALOG & MENU */
-        #notif { position: fixed; top: 20%; left: 50%; transform: translateX(-50%); color: var(--gold); font-size: 24px; font-weight: bold; text-align: center; z-index: 2000; pointer-events: none; text-shadow: 2px 2px 5px #000; }
-        #menu-start { position: fixed; inset: 0; background: #000; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #fff; }
-        .sect-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 15px; margin-top: 20px; }
-        .sect-btn { padding: 15px; border: 2px solid var(--gold); background: #1a1a1a; color: var(--gold); cursor: pointer; border-radius: 8px; font-weight: bold; }
-        .sect-btn:hover { background: var(--gold); color: #000; }
+        #joystick { position: fixed; bottom: 50px; left: 50px; width: 140px; height: 140px; background: rgba(255,255,255,0.05); border-radius: 50%; border: 2px solid rgba(255,255,255,0.1); }
+        #stick { position: absolute; width: 60px; height: 60px; background: rgba(255,255,255,0.2); border-radius: 50%; top: 40px; left: 40px; border: 2px solid #fff; }
+        .skill-bar { position: fixed; bottom: 40px; right: 40px; display: flex; gap: 15px; flex-wrap: wrap-reverse; max-width: 400px; justify-content: flex-end; }
+        .skill-btn { width: 80px; height: 80px; border-radius: 50%; border: 3px solid var(--gold); background: #221a0f; color: var(--gold); font-weight: bold; font-size: 11px; cursor: pointer; box-shadow: 0 5px 15px #000; }
     </style>
 </head>
 <body>
 
-<div id="menu-start">
-    <h1 style="letter-spacing: 5px;">VÕ LÂM TU TIÊN STICKMAN</h1>
-    <p>Chọn Môn Phái Để Bắt Đầu Hành Trình</p>
-    <div class="sect-grid" id="sect-box"></div>
-</div>
-
 <div id="viewport">
     <div id="game-map">
+        <div id="sect-layers"></div>
+        <div id="mob-layers"></div>
         <div id="hero" class="stickman">
-            <div class="entity-tag">
-                <div class="rank" id="p-rank">Phàm Nhân</div>
-                <div class="name" id="p-name" style="color:var(--gold)">Đại Hiệp</div>
-            </div>
+            <div id="p-tag" style="position:absolute; top:-40px; width:200px; text-align:center; left:-80px; font-size:12px; color:var(--gold); text-shadow:1px 1px #000;">[Cấp 1] Tân Thủ</div>
             <div class="head"></div><div class="body"></div>
-            <div class="arm l"></div><div class="arm r"><div class="weapon-obj" id="p-weapon"></div></div>
-            <div class="leg l"></div><div class="leg r"></div>
+            <div class="arm" id="arm-l" style="transform:rotate(140deg)"></div>
+            <div class="arm" id="arm-r" style="transform:rotate(-40deg)"><div class="weapon" id="p-weapon"></div></div>
+            <div class="leg" style="transform:rotate(110deg)"></div><div class="leg" style="transform:rotate(70deg)"></div>
         </div>
-        <div id="entities-layer"></div>
     </div>
 </div>
 
-<div class="top-ui">
-    <div class="p-avatar"></div>
-    <div class="p-bars">
-        <div class="bar"><div id="hp-f" class="fill" style="background:var(--hp); width:100%"></div><div class="bar-txt">HP</div></div>
-        <div class="bar"><div id="st-f" class="fill" style="background:var(--st); width:100%"></div><div class="bar-txt">THỂ LỰC</div></div>
-        <div class="bar"><div id="ex-f" class="fill" style="background:var(--exp); width:0%"></div><div class="bar-txt">LINH KHÍ</div></div>
-        <div id="ui-lv" style="font-size: 11px; color: #aaa;">Cấp: 1 | Môn phái: Chưa có</div>
-    </div>
+<div class="ui status">
+    <div id="ui-sects" style="color:var(--gold); font-weight:bold; font-size:18px; margin-bottom:5px;">Vô Phái</div>
+    <div style="font-size:13px;">Cảnh Giới: <span id="ui-lv">1</span> | Lực Chiến: <span id="ui-pow">100</span></div>
+    <div style="height:10px; background:#222; margin-top:8px; border-radius:5px; overflow:hidden; border:1px solid #444;"><div id="ui-exp" style="height:100%; width:0%; background:var(--exp); transition: 0.3s"></div></div>
+    <div id="ui-slots" style="font-size:10px; color:#888; margin-top:5px;">Cơ duyên đa phái: 0/1</div>
 </div>
 
-<div id="notif"></div>
+<div class="ui mini-map"><div id="m-dot"></div></div>
 
-<div id="joy-zone"><div id="joy-stick"></div></div>
-<button class="btn-atk" onclick="doAttack()">ĐÁNH</button>
-<button class="btn-sub" onclick="toggleHorse()">CƯỠI NGỰA</button>
+<div class="ui rankings">
+    <div style="text-align:center; color:var(--gold); border-bottom:1px solid #444; padding-bottom:5px; margin-bottom:10px; font-weight:bold;">THIÊN BẢNG VÕ LÂM</div>
+    <div id="rank-list"></div>
+</div>
+
+<div id="invite-ui">
+    <h1 id="inv-sect-name" style="color:var(--gold); margin:0;">CƠ DUYÊN!</h1>
+    <p id="inv-msg" style="line-height:1.6; font-size:16px;">Bạn gặp được vị tiền bối...</p>
+    <button class="btn-choice btn-accept" onclick="acceptSect()">GIA NHẬP</button>
+    <button class="btn-choice btn-decline" onclick="declineSect()">TỪ CHỐI</button>
+</div>
+
+<div id="joystick"><div id="stick"></div></div>
+<div class="skill-bar" id="skill-bar">
+    <button class="skill-btn" style="width:100px; height:100px; background:#800; color:#fff; font-size:18px;" onclick="attack()">ĐÁNH</button>
+</div>
 
 <script>
-    const SECTS = {
-        'Thiếu Lâm': { e: 'Kim', hp: 2.0, st: 1.0, atk: 1.2 },
-        'Thiên Vương': { e: 'Kim', hp: 2.5, st: 1.2, atk: 1.5 },
-        'Đường Môn': { e: 'Mộc', hp: 1.0, st: 2.0, atk: 2.0 },
-        'Ngũ Độc': { e: 'Mộc', hp: 1.2, st: 1.5, atk: 1.8 },
-        'Nga Mi': { e: 'Thủy', hp: 1.5, st: 1.0, atk: 1.1 },
-        'Thúy Yên': { e: 'Thủy', hp: 1.4, st: 1.3, atk: 1.4 },
-        'Cái Bang': { e: 'Hỏa', hp: 1.8, st: 2.5, atk: 1.6 },
-        'Thiên Nhẫn': { e: 'Hỏa', hp: 1.6, st: 1.8, atk: 1.9 },
-        'Võ Đang': { e: 'Thổ', hp: 1.2, st: 1.2, atk: 2.3 },
-        'Côn Lôn': { e: 'Thổ', hp: 1.3, st: 1.3, atk: 2.1 }
+    const SECT_DB = {
+        'Thiếu Lâm': { x: 10000, y: 10000, skill: 'Sư Tử Hống', color: 'orange', power: 250000 },
+        'Võ Đang': { x: 40000, y: 10000, skill: 'Thái Cực Kiếm', color: 'cyan', power: 280000 },
+        'Nga Mi': { x: 70000, y: 10000, skill: 'Cửu Âm Trảo', color: 'pink', power: 240000 },
+        'Cái Bang': { x: 10000, y: 40000, skill: 'Hàng Long Chưởng', color: 'red', power: 260000 },
+        'Đường Môn': { x: 40000, y: 40000, skill: 'Bạo Vũ Lê Hoa', color: 'lime', power: 230000 },
+        'Côn Lôn': { x: 70000, y: 40000, skill: 'Côn Lôn Kiếm', color: '#fff', power: 270000 },
+        'Minh Giáo': { x: 10000, y: 70000, skill: 'Càn Khôn Na Di', color: '#f0f', power: 290000 },
+        'Ma Giáo': { x: 70000, y: 70000, skill: 'Quỳ Hoa Bảo Điển', color: '#600', power: 350000 }
     };
 
-    const RANKS = ["Phàm Nhân", "Luyện Khí", "Trúc Cơ", "Kim Đan", "Nguyên Anh", "Hóa Thần", "Đại Thừa", "Độ Kiếp"];
+    let p = { x: 10500, y: 10500, lv: 1, exp: 0, pow: 100, sects: [], skills: [], dir:{x:0,y:0}, speed: 7, pending: null };
+    let mobs = [];
 
-    let state = {
-        p: { x: 10000, y: 10000, hp: 1000, maxHp: 1000, st: 500, maxSt: 500, exp: 0, rank: 0, lv: 1, sect: '', dir: {x:0, y:0}, speed: 9, horse: false, hasWeapon: false, isBossEvent: false },
-        mobs: [],
-        npcs: []
-    };
+    function init() {
+        Object.keys(SECT_DB).forEach(name => {
+            const s = SECT_DB[name];
+            const zone = document.createElement('div');
+            zone.className = 'sect-zone';
+            zone.style.left = (s.x - 4500) + 'px'; zone.style.top = (s.y - 4500) + 'px';
+            zone.style.width = zone.style.height = '9000px';
+            zone.innerHTML = `<div class="sect-name">${name}</div>`;
+            document.getElementById('sect-layers').appendChild(zone);
+        });
 
-    // INIT
-    const sectBox = document.getElementById('sect-box');
-    Object.keys(SECTS).forEach(s => {
-        const btn = document.createElement('button');
-        btn.className = 'sect-btn';
-        btn.innerHTML = `${s}<br><small>Hệ ${SECTS[s].e}</small>`;
-        btn.onclick = () => startGame(s);
-        sectBox.appendChild(btn);
-    });
-
-    function startGame(s) {
-        state.p.sect = s;
-        const sd = SECTS[s];
-        state.p.maxHp *= sd.hp; state.p.hp = state.p.maxHp;
-        state.p.maxSt *= sd.st; state.p.st = state.p.maxSt;
-        document.getElementById('menu-start').style.display = 'none';
-        document.getElementById('ui-lv').innerText = `Cấp: 1 | Môn phái: ${s}`;
-        document.getElementById('p-name').innerText = s + " Đệ Tử";
-        spawnInitialNPCs();
-        spawnMobs(50);
-        requestAnimationFrame(loop);
+        for(let i=0; i<200; i++) spawnMob();
+        updateRanks();
+        loop();
     }
 
-    function spawnInitialNPCs() {
-        createEntity(10100, 10000, 'npc-teacher', 'Tiên Nhân (Dạy Võ)');
-        createEntity(9900, 10100, 'npc-shop', 'Thương Nhân');
-    }
-
-    function spawnMobs(num) {
-        for(let i=0; i<num; i++) {
-            createEntity(state.p.x + (Math.random()*2000-1000), state.p.y + (Math.random()*2000-1000), 'mob', 'Yêu Quái');
-        }
-    }
-
-    function createEntity(x, y, type, name) {
-        const id = 'ent-' + Math.random().toString(36).substr(2, 9);
-        const isBoss = type === 'boss';
-        const html = `
-            <div id="${id}" class="stickman ${type} ${isBoss?'boss':''}" style="left:${x}px; top:${y}px">
-                <div class="entity-tag">
-                    <div class="name" style="color:${type==='mob'||isBoss?'#ff4444':'#0f0'}">${name}</div>
-                </div>
-                <div class="head"></div><div class="body"></div>
-                <div class="arm l"></div><div class="arm r"></div>
-                <div class="leg l"></div><div class="leg r"></div>
-            </div>`;
-        document.getElementById('entities-layer').insertAdjacentHTML('beforeend', html);
-        state.mobs.push({ id, x, y, type, hp: isBoss?5000:200, name });
+    function spawnMob() {
+        const id = 'mob-' + Math.random();
+        const mx = Math.random() * 80000;
+        const my = Math.random() * 80000;
+        const html = `<div id="${id}" class="stickman" style="left:${mx}px; top:${my}px; opacity:0.7">
+            <div class="head" style="border-color:red"></div><div class="body" style="background:red"></div>
+        </div>`;
+        document.getElementById('mob-layers').insertAdjacentHTML('beforeend', html);
+        mobs.push({ id, x: mx, y: my, hp: 100 });
     }
 
     // JOYSTICK LOGIC
-    const joyStick = document.getElementById('joy-stick');
-    document.getElementById('joy-zone').addEventListener('touchstart', moveStick);
-    document.getElementById('joy-zone').addEventListener('touchmove', moveStick);
-    document.getElementById('joy-zone').addEventListener('touchend', () => {
-        state.p.dir = {x:0, y:0};
-        joyStick.style.left = '40px'; joyStick.style.top = '40px';
-        document.getElementById('hero').classList.remove('moving');
-    });
+    const joy = document.getElementById('joystick');
+    const stick = document.getElementById('stick');
+    joy.addEventListener('touchstart', e => handleJoy(e));
+    joy.addEventListener('touchmove', e => handleJoy(e));
+    joy.addEventListener('touchend', () => { p.dir={x:0,y:0}; stick.style.left=stick.style.top='40px'; });
 
-    function moveStick(e) {
+    function handleJoy(e) {
         e.preventDefault();
-        const rect = document.getElementById('joy-zone').getBoundingClientRect();
-        const touch = e.touches[0];
-        let x = touch.clientX - rect.left - 70;
-        let y = touch.clientY - rect.top - 70;
+        const r = joy.getBoundingClientRect();
+        const t = e.touches[0];
+        let x = t.clientX - r.left - 70; let y = t.clientY - r.top - 70;
         const d = Math.hypot(x, y);
         if(d > 50) { x *= 50/d; y *= 50/d; }
-        joyStick.style.left = (x + 40) + 'px';
-        joyStick.style.top = (y + 40) + 'px';
-        state.p.dir = { x: x/50, y: y/50 };
-        document.getElementById('hero').classList.add('moving');
+        stick.style.left = (x+40)+'px'; stick.style.top = (y+40)+'px';
+        p.dir = { x: x/50, y: y/50 };
     }
 
-    // COMBAT & SKILLS
-    function doAttack() {
-        const h = document.getElementById('hero');
-        h.classList.add('attacking');
-        setTimeout(() => h.classList.remove('attacking'), 200);
-
-        state.mobs.forEach((m, i) => {
-            const d = Math.hypot(m.x - state.p.x, m.y - state.p.y);
-            if(d < 120) {
-                if(m.type === 'npc-teacher') {
-                    notify("Bạn Đã Nhận Được Thần Kiếm!");
-                    state.p.hasWeapon = true;
-                    document.getElementById('p-weapon').style.display = 'block';
-                    return;
-                }
-                if(m.type === 'npc-shop') {
-                    notify("Linh Đan Hồi Phục Thể Lực!");
-                    state.p.st = state.p.maxSt;
-                    state.p.hp = state.p.maxHp;
-                    return;
-                }
-                
-                // Damage
-                const dmg = (100 * SECTS[state.p.sect].atk) * (state.p.hasWeapon?2:1);
-                m.hp -= dmg;
-                if(m.hp <= 0) {
-                    const dom = document.getElementById(m.id);
-                    if(dom) dom.remove();
-                    if(m.type === 'boss') {
-                        state.p.rank++;
-                        state.p.isBossEvent = false;
-                        state.p.exp = 0;
-                        notify("PHI THĂNG THÀNH CÔNG: " + RANKS[state.p.rank]);
-                    } else {
-                        state.p.exp += 20;
-                    }
-                    state.mobs.splice(i, 1);
-                    checkProgression();
-                }
-            }
-        });
-    }
-
-    function checkProgression() {
-        if(state.p.exp >= 100 && !state.p.isBossEvent) {
-            state.p.isBossEvent = true;
-            notify("THIÊN KIẾP GIÁNG LÂM - DIỆT BOSS ĐỂ PHI THĂNG!");
-            createEntity(state.p.x + 200, state.p.y + 200, 'boss', 'Thủ Vệ Cảnh Giới');
-        }
-    }
-
-    function notify(txt) {
-        const n = document.getElementById('notif');
-        n.innerText = txt;
-        setTimeout(() => n.innerText = "", 3000);
-    }
-
-    function toggleHorse() {
-        state.p.horse = !state.p.horse;
-        state.p.speed = state.p.horse ? 18 : 9;
-        notify(state.p.horse ? "Đã cưỡi ngựa (Tốn thể lực)" : "Đi bộ");
-    }
-
-    // MAIN LOOP
-    function loop() {
-        // Player Move
-        if(state.p.dir.x !== 0 || state.p.dir.y !== 0) {
-            if(state.p.st > 5) {
-                state.p.x += state.p.dir.x * state.p.speed;
-                state.p.y += state.p.dir.y * state.p.speed;
-                state.p.st -= state.p.horse ? 0.6 : 0.2;
-            } else {
-                state.p.x += state.p.dir.x * 2;
-                state.p.y += state.p.dir.y * 2;
-            }
-        } else {
-            state.p.st = Math.min(state.p.maxSt, state.p.st + 0.5);
-        }
-
-        // AI Mobs & Boss
-        state.mobs.forEach(m => {
-            if(m.type === 'mob' || m.type === 'boss') {
-                const d = Math.hypot(state.p.x - m.x, state.p.y - m.y);
-                if(d < 500) {
-                    const ang = Math.atan2(state.p.y - m.y, state.p.x - m.x);
-                    m.x += Math.cos(ang) * (m.type==='boss'?5:3);
-                    m.y += Math.sin(ang) * (m.type==='boss'?5:3);
-                    if(d < 40) state.p.hp -= (m.type==='boss'?5:1);
-                }
-                const dom = document.getElementById(m.id);
-                if(dom) { dom.style.left = m.x + 'px'; dom.style.top = m.y + 'px'; }
-            }
-        });
-
-        // Update UI
-        const h = document.getElementById('hero');
-        h.style.left = state.p.x + 'px'; h.style.top = state.p.y + 'px';
-        document.getElementById('game-map').style.transform = `translate(${window.innerWidth/2 - state.p.x}px, ${window.innerHeight/2 - state.p.y}px)`;
+    function checkCơDuyên() {
+        if(p.pending) return;
+        const slotDungTích = Math.floor(p.lv / 30) + 1;
         
-        document.getElementById('hp-f').style.width = (state.p.hp/state.p.maxHp*100) + '%';
-        document.getElementById('st-f').style.width = (state.p.st/state.p.maxSt*100) + '%';
-        document.getElementById('ex-f').style.width = state.p.exp + '%';
-        document.getElementById('p-rank').innerText = RANKS[state.p.rank];
+        Object.keys(SECT_DB).forEach(name => {
+            const s = SECT_DB[name];
+            const dist = Math.hypot(p.x - s.x, p.y - s.y);
+            if(dist < 2000 && !p.sects.includes(name) && p.sects.length < slotDungTích) {
+                p.pending = name;
+                document.getElementById('invite-ui').style.display = 'block';
+                document.getElementById('inv-sect-name').innerText = `CƠ DUYÊN: ${name}`;
+                document.getElementById('inv-msg').innerText = `Tại lãnh thổ ${name}, tiền bối thấy cốt cách ngươi phi phàm. Có muốn gia nhập để học ${s.skill}? (Hiện tại bạn có thể học tối đa ${slotDungTích} môn phái)`;
+            }
+        });
+    }
 
-        if(state.p.hp <= 0) {
-            alert("Bạn đã tử nạn! Quay về điểm bắt đầu.");
-            location.reload();
-        }
+    function acceptSect() {
+        p.sects.push(p.pending);
+        p.skills.push(SECT_DB[p.pending].skill);
+        p.pow += 5000;
+        updateUI();
+        declineSect();
+    }
 
+    function declineSect() {
+        document.getElementById('invite-ui').style.display = 'none';
+        setTimeout(() => p.pending = null, 5000); // Tạm dừng mời phái này trong 5s
+    }
+
+    function attack() {
+        // Effect
+        const ring = document.createElement('div');
+        ring.className = 'fx-ring';
+        ring.style.left = p.x + 'px'; ring.style.top = p.y + 'px';
+        document.getElementById('game-map').appendChild(ring);
+        setTimeout(() => ring.remove(), 600);
+
+        mobs.forEach((m, i) => {
+            if(Math.hypot(p.x - m.x, p.y - m.y) < 200) {
+                const el = document.getElementById(m.id);
+                if(el) el.remove();
+                mobs.splice(i, 1);
+                p.exp += 20; checkLv();
+                spawnMob();
+            }
+        });
+    }
+
+    function checkLv() {
+        if(p.exp >= 100) { p.lv++; p.exp = 0; p.pow += 1200; updateRanks(); updateUI(); }
+        document.getElementById('ui-exp').style.width = p.exp + '%';
+        document.getElementById('ui-lv').innerText = p.lv;
+        document.getElementById('ui-pow').innerText = Math.floor(p.pow);
+    }
+
+    function updateUI() {
+        document.getElementById('ui-sects').innerText = p.sects.join(' | ') || 'Vô Phái';
+        document.getElementById('p-tag').innerText = `[Cấp ${p.lv}] ${p.sects[p.sects.length-1] || 'Tân Thủ'}`;
+        document.getElementById('ui-slots').innerText = `Cơ duyên đa phái: ${p.sects.length}/${Math.floor(p.lv/30)+1}`;
+        if(p.sects.length > 0) document.getElementById('p-weapon').style.display = 'block';
+
+        const bar = document.getElementById('skill-bar');
+        const atkBtn = bar.children[0];
+        bar.innerHTML = ''; bar.appendChild(atkBtn);
+        p.skills.forEach(s => {
+            const b = document.createElement('button');
+            b.className = 'skill-btn'; b.innerText = s;
+            b.onclick = () => { attack(); p.exp += 5; checkLv(); };
+            bar.appendChild(b);
+        });
+    }
+
+    function updateRanks() {
+        const top = Object.keys(SECT_DB).map(s => ({n: "Sư Phụ " + s, p: SECT_DB[s].power, s}));
+        top.push({n: 'Đại Hiệp (Bạn)', p: p.pow, s: 'Player'});
+        const sorted = top.sort((a,b) => b.p - a.p);
+        document.getElementById('rank-list').innerHTML = sorted.map((r, i) => `
+            <div style="font-size:11px; padding:5px; color:${r.n.includes('Bạn')?'var(--gold)':'#777'}">
+                Top ${i+1}: ${r.n} - ${Math.floor(r.p)} LC
+            </div>
+        `).join('');
+    }
+
+    function loop() {
+        p.x += p.dir.x * p.speed; p.y += p.dir.y * p.speed;
+        p.x = Math.max(0, Math.min(80000, p.x)); p.y = Math.max(0, Math.min(80000, p.y));
+
+        const h = document.getElementById('hero');
+        h.style.left = p.x + 'px'; h.style.top = p.y + 'px';
+        document.getElementById('game-map').style.transform = `translate(${window.innerWidth/2 - p.x}px, ${window.innerHeight/2 - p.y}px)`;
+        
+        document.getElementById('m-dot').style.left = (p.x / 80000 * 160) + 'px';
+        document.getElementById('m-dot').style.top = (p.y / 80000 * 160) + 'px';
+
+        checkCơDuyên();
         requestAnimationFrame(loop);
     }
+
+    init();
 </script>
 </body>
 </html>
-
