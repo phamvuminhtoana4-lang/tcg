@@ -3,326 +3,323 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, orientation=landscape">
-    <title>VÕ LÂM SUPREME: SIÊU CẤP VIP PRO</title>
+    <title>VÕ LÂM SUPREME - FULL INTERFACE 2026</title>
     <style>
         :root {
-            --gold: #FFD700; --silver: #C0C0C0; --ui-bg: rgba(10, 10, 10, 0.95);
-            --hp-boss: #ff1100; --exp-color: #00ff88; --mana-color: #00d4ff;
+            --gold: #FFD700; --red: #FF3131; --blue: #00CCFF; --green: #39FF14;
+            --purple: #BC13FE; --panel: rgba(10, 10, 10, 0.95); --border: 2px solid var(--gold);
         }
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; user-select: none; }
         body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #000; font-family: 'Tahoma', sans-serif; color: #fff; }
 
         /* --- WORLD ENGINE --- */
-        #viewport { position: relative; width: 100vw; height: 100vh; overflow: hidden; }
-        #map { 
-            position: absolute; width: 100000px; height: 100000px; 
-            background: #0a0a0a url('https://www.transparenttextures.com/patterns/dark-matter.png');
-            background-size: 500px 500px; will-change: transform;
-        }
+        #game-stage { position: relative; width: 100vw; height: 100vh; overflow: hidden; background: #050505; }
+        #world { position: absolute; width: 100000px; height: 100000px; background-image: radial-gradient(#111 2px, transparent 2px); background-size: 80px 80px; will-change: transform; }
 
-        /* --- ENTITIES (STIKMAN VIP) --- */
-        .entity { position: absolute; width: 50px; height: 70px; z-index: 100; pointer-events: none; transition: transform 0.1s; }
-        .stickman { position: relative; width: 100%; height: 100%; }
-        .head { position: absolute; width: 22px; height: 22px; border: 3px solid #fff; border-radius: 50%; top: 0; left: 14px; background: #000; box-shadow: 0 0 10px rgba(255,255,255,0.5); }
-        .body-line { position: absolute; width: 3px; height: 32px; background: #fff; top: 22px; left: 24px; }
-        .arm { position: absolute; width: 22px; height: 3px; background: #fff; top: 28px; left: 24px; transform-origin: left; transition: 0.1s; }
-        .leg { position: absolute; width: 22px; height: 3px; background: #fff; top: 52px; left: 24px; transform-origin: left; }
+        /* --- STICKMAN BONE SYSTEM (HIGH DETAIL) --- */
+        .entity { position: absolute; width: 60px; height: 100px; z-index: 100; pointer-events: none; }
+        .stickman { position: relative; width: 100%; height: 100%; transform-origin: bottom center; }
+        .head { position: absolute; width: 28px; height: 28px; border: 3px solid #fff; border-radius: 50%; top: 0; left: 16px; background: #000; box-shadow: 0 0 10px rgba(255,255,255,0.3); }
+        .torso { position: absolute; width: 4px; height: 42px; background: #fff; top: 28px; left: 28px; border-radius: 2px; }
+        .arm { position: absolute; width: 3px; height: 25px; background: #fff; top: 32px; left: 28px; transform-origin: top; }
+        .leg { position: absolute; width: 4px; height: 32px; background: #fff; top: 70px; left: 28px; transform-origin: top; }
         
-        /* Hiệu ứng VIP Aura */
-        .aura-vip { position: absolute; width: 80px; height: 30px; background: radial-gradient(ellipse, rgba(255,215,0,0.4), transparent); bottom: -15px; left: -15px; border-radius: 50%; animation: pulse 1s infinite; }
-        @keyframes pulse { 0% { transform: scale(1); opacity: 0.3; } 50% { transform: scale(1.4); opacity: 0.7; } 100% { transform: scale(1); opacity: 0.3; } }
+        .aura { position: absolute; inset: -35px; border: 2px solid var(--gold); border-radius: 50%; border-top-color: transparent; animation: spin 2s linear infinite; display: none; }
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        .is-vip .aura { display: block; }
 
-        .npc-tag { position: absolute; top: -30px; left: 50%; transform: translateX(-50%); white-space: nowrap; font-size: 12px; font-weight: bold; text-shadow: 2px 2px #000; padding: 2px 8px; border-radius: 4px; background: rgba(0,0,0,0.6); border: 1px solid rgba(255,215,0,0.3); }
+        /* --- UI PANEL SYSTEM (THU RA THU VÀO) --- */
+        .window { position: fixed; background: var(--panel); border: var(--border); border-radius: 8px; z-index: 1000; transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); overflow: hidden; box-shadow: 0 0 20px #000; }
+        .window-header { background: var(--gold); color: #000; padding: 5px 10px; font-weight: bold; font-size: 12px; display: flex; justify-content: space-between; cursor: pointer; }
+        .window-content { padding: 10px; height: calc(100% - 25px); overflow-y: auto; }
+        .minimized { height: 25px !important; width: 120px !important; opacity: 0.8; }
 
-        /* --- HUD & UI --- */
-        .hud-top { position: fixed; top: 20px; left: 20px; z-index: 1000; display: flex; gap: 15px; }
-        .player-info { background: var(--ui-bg); border: 2px solid var(--gold); padding: 12px; border-radius: 8px; min-width: 260px; box-shadow: 0 0 20px rgba(0,0,0,0.8); }
-        .bar-bg { width: 100%; height: 10px; background: #222; border-radius: 5px; margin: 5px 0; overflow: hidden; border: 1px solid #444; }
-        .bar-fill { height: 100%; transition: width 0.3s ease; }
+        /* Vị trí cụ thể các Panel */
+        #minimap-panel { top: 20px; right: 20px; width: 180px; height: 180px; }
+        #inventory-panel { bottom: 200px; right: 20px; width: 220px; height: 300px; }
+        #shop-panel { top: 20px; left: 400px; width: 250px; height: 350px; }
+        #chat-panel { bottom: 30px; left: 20px; width: 350px; height: 150px; }
         
-        #boss-hud { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); width: 60%; display: none; z-index: 1100; text-align: center; }
-        .boss-hp-bg { width: 100%; height: 20px; background: #300; border: 2px solid #ff0000; border-radius: 10px; overflow: hidden; box-shadow: 0 0 15px #f00; }
-        #boss-hp-fill { height: 100%; width: 100%; background: linear-gradient(90deg, #900, #ff0000); }
+        /* Nội dung MiniMap */
+        #minimap-view { width: 100%; height: 100%; background: #000; position: relative; border: 1px solid #333; }
+        #mini-hero { width: 6px; height: 6px; background: var(--green); border-radius: 50%; position: absolute; }
 
-        /* --- CHAT CHUẨN VÕ LÂM --- */
-        #chat-box { position: fixed; bottom: 20px; left: 20px; width: 350px; height: 220px; background: rgba(0,0,0,0.8); border: 1px solid #555; border-radius: 5px; z-index: 2000; display: flex; flex-direction: column; }
-        #chat-content { flex: 1; padding: 10px; overflow-y: auto; font-size: 13px; line-height: 1.6; color: #ccc; }
-        .chat-msg { margin-bottom: 4px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        /* HUD & Status */
+        .hud-status { position: fixed; top: 20px; left: 20px; width: 350px; z-index: 900; background: var(--panel); border: var(--border); padding: 15px; border-radius: 12px; }
+        .bar-wrap { width: 100%; height: 12px; background: #222; border-radius: 6px; margin: 8px 0; overflow: hidden; }
+        .bar-fill { height: 100%; width: 100%; transition: width 0.3s; }
 
-        /* --- SKILLS & CONTROLS --- */
-        #joy-base { position: fixed; bottom: 60px; left: 60px; width: 150px; height: 150px; background: rgba(255,255,255,0.05); border: 3px solid rgba(255,215,0,0.2); border-radius: 50%; }
-        #joy-stick { position: absolute; width: 60px; height: 60px; background: var(--gold); border-radius: 50%; top: 45px; left: 45px; opacity: 0.6; box-shadow: 0 0 20px var(--gold); }
+        /* Bong bóng chat nhân vật */
+        .chat-bubble { position: absolute; top: -110px; left: 50%; transform: translateX(-50%) scale(0); background: #fff; color: #000; padding: 8px 15px; border-radius: 15px; font-weight: bold; transition: 0.3s; z-index: 500; border: 2px solid var(--gold); white-space: nowrap; }
+        .chat-bubble.active { transform: translateX(-50%) scale(1); }
+
+        /* Skill & Controls */
+        .action-zone { position: fixed; bottom: 30px; right: 30px; display: flex; flex-direction: column; align-items: flex-end; gap: 15px; }
+        .main-atk { width: 130px; height: 130px; border-radius: 50%; background: radial-gradient(var(--red), #400); border: 5px solid #fff; color: #fff; font-size: 28px; font-weight: 900; cursor: pointer; box-shadow: 0 0 30px rgba(255,0,0,0.5); }
         
-        .action-bar { position: fixed; bottom: 40px; right: 40px; display: flex; align-items: flex-end; gap: 15px; }
-        .skill-btn { width: 70px; height: 70px; border-radius: 50%; background: #111; border: 2px solid var(--gold); color: var(--gold); font-weight: bold; font-size: 10px; cursor: pointer; position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center; }
-        .atk-btn { width: 120px; height: 120px; border-radius: 50%; background: radial-gradient(#f00, #600); border: 4px solid #fff; color: #fff; font-size: 24px; font-weight: bold; box-shadow: 0 0 30px rgba(255,0,0,0.5); }
-        .cd-mask { position: absolute; bottom: 0; width: 100%; height: 0%; background: rgba(0,0,0,0.7); }
+        #joy-base { position: fixed; bottom: 50px; left: 400px; width: 160px; height: 160px; background: rgba(255,255,255,0.02); border: 2px solid rgba(255,255,255,0.1); border-radius: 50%; }
+        #joy-stick { position: absolute; width: 70px; height: 70px; background: var(--gold); border-radius: 50%; top: 45px; left: 45px; box-shadow: 0 0 20px var(--gold); }
 
-        /* --- GATE --- */
-        #gate { position: fixed; inset: 0; background: radial-gradient(circle, #222, #000); z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-        .start-btn { padding: 20px 60px; background: var(--gold); border: none; font-weight: bold; font-size: 28px; border-radius: 50px; cursor: pointer; box-shadow: 0 0 40px rgba(255,215,0,0.5); transition: 0.3s; }
-        .start-btn:hover { transform: scale(1.1); }
+        /* Dmg & FX */
+        .dmg { position: absolute; color: var(--gold); font-size: 30px; font-weight: 900; animation: floatUp 0.8s forwards; text-shadow: 2px 2px #000; }
+        @keyframes floatUp { to { transform: translateY(-100px); opacity: 0; } }
     </style>
 </head>
 <body>
-
-<div id="gate">
-    <h1 style="color:var(--gold); font-size: 70px; margin:0; text-shadow: 0 0 20px var(--gold);">VÕ LÂM SUPREME</h1>
-    <p style="letter-spacing: 10px; color: #888; margin-bottom: 40px;">SIÊU CẤP VIP PRO • 2026 EDITION</p>
-    <button class="start-btn" onclick="startGame()">KHỞI CHẠY HỆ THỐNG</button>
-</div>
-
-<div id="boss-hud">
-    <h2 id="boss-name" style="color:#ff0000; margin:0; text-shadow: 0 0 10px #000;">HỎA KỲ LÂN (LEVEL 100)</h2>
-    <div class="boss-hp-bg"><div id="boss-hp-fill"></div></div>
-</div>
-
-<div id="viewport">
-    <div id="map">
-        <div id="sect-layer"></div>
-        <div id="entity-layer">
+<div id="game-stage">
+    <div id="world">
+        <div id="layer-ents">
             <div id="hero" class="entity">
-                <div class="aura-vip"></div>
-                <div class="stickman">
-                    <div class="npc-tag" style="color:var(--gold)">[VIP PRO] ĐẠI HIỆP</div>
+                <div class="aura"></div>
+                <div class="stickman" id="hero-body">
+                    <div class="chat-bubble" id="hero-chat"></div>
+                    <div style="position:absolute; top:-40px; width:150px; left:-45px; text-align:center; color:var(--gold); font-weight:bold;">[VIP] ĐẠI HIỆP</div>
                     <div class="head" style="border-color: var(--gold);"></div>
-                    <div class="body-line"></div>
-                    <div class="arm" id="arm-l" style="transform: rotate(150deg);"></div>
-                    <div class="arm" id="arm-r" style="transform: rotate(-30deg);"></div>
-                    <div class="leg" id="leg-l" style="transform: rotate(100deg);"></div>
-                    <div class="leg" id="leg-r" style="transform: rotate(80deg);"></div>
+                    <div class="torso"></div>
+                    <div class="arm l"></div><div class="arm r"></div>
+                    <div class="leg l"></div><div class="leg r"></div>
                 </div>
             </div>
         </div>
     </div>
 </div>
 
-<div class="hud-top">
-    <div class="player-info">
-        <div style="display:flex; justify-content:space-between; margin-bottom: 5px;">
-            <span style="color:var(--gold); font-weight:bold;">CẤP: <span id="ui-lv">1</span></span>
-            <span style="color:var(--mana-color);">LC: <span id="ui-pow">1,000</span></span>
-        </div>
-        <div class="bar-bg"><div id="ui-exp" class="bar-fill" style="background: var(--exp-color); width: 0%;"></div></div>
-        <div style="display:flex; justify-content:space-between; font-size: 13px; margin-top:5px;">
-            <span>Vàng: <span id="ui-money" style="color:yellow">5000</span></span>
-            <span>Tọa độ: <span id="ui-pos">2000, 2000</span></span>
-        </div>
+<div class="hud-status">
+    <div style="display:flex; justify-content:space-between">
+        <b>ĐẠI HIỆP TRUYỀN KỲ</b>
+        <span>Cấp: <b id="ui-lv" style="color:var(--green)">1</b></span>
+    </div>
+    <div class="bar-wrap"><div id="hp-bar" class="bar-fill" style="background:var(--red)"></div></div>
+    <div class="bar-wrap"><div id="exp-bar" class="bar-fill" style="background:var(--green); width:0%"></div></div>
+    <div style="font-size:12px; display:flex; justify-content:space-between">
+        <span>Lực chiến: <b id="ui-pow">2,500</b></span>
+        <span>Ngân lượng: <b id="ui-money" style="color:yellow">5,000</b></span>
     </div>
 </div>
 
-<div id="chat-box">
-    <div style="background:#222; padding:5px 10px; font-size:11px; color:var(--gold); border-bottom:1px solid #444;">HỆ THỐNG THẾ GIỚI</div>
-    <div id="chat-content"></div>
+<div id="minimap-panel" class="window">
+    <div class="window-header" onclick="toggleWindow('minimap-panel')">
+        <span>🗺️ BẢN ĐỒ</span> <span>[_]</span>
+    </div>
+    <div class="window-content">
+        <div id="minimap-view"><div id="mini-hero"></div></div>
+    </div>
+</div>
+
+<div id="inventory-panel" class="window">
+    <div class="window-header" onclick="toggleWindow('inventory-panel')">
+        <span>🎒 HÀNH TRANG</span> <span>[_]</span>
+    </div>
+    <div class="window-content" id="inv-list">
+        <div style="font-size:11px; color:#888">Trống...</div>
+    </div>
+</div>
+
+<div id="shop-panel" class="window">
+    <div class="window-header" onclick="toggleWindow('shop-panel')">
+        <span>💰 CỬA HÀNG VIP</span> <span>[_]</span>
+    </div>
+    <div class="window-content" id="shop-list"></div>
+</div>
+
+<div id="chat-panel" class="window">
+    <div class="window-header" onclick="toggleWindow('chat-panel')">
+        <span>💬 KIẾM HIỆP CHAT</span> <span>[_]</span>
+    </div>
+    <div class="window-content" id="chat-log" style="font-size:12px; color:var(--blue)">
+        [Hệ thống]: Chào mừng Đại hiệp trở lại giang hồ!
+    </div>
 </div>
 
 <div id="joy-base"><div id="joy-stick"></div></div>
 
-<div class="action-bar">
-    <div id="skill-slot">
-        </div>
-    <button class="atk-btn" onmousedown="useSkill('Normal')">ĐÁNH</button>
+<div class="action-zone">
+    <button class="main-atk" onmousedown="Engine.atk()">ĐÁNH</button>
 </div>
 
-    <script>
-    const WORLD_SIZE = 100000;
-    const SECTS = {
-        'Thiếu Lâm': { x: 15000, y: 15000, color: '#f1c40f', skill: 'Sư Tử Hống', icon: '🦁' },
-        'Võ Đang': { x: 85000, y: 15000, color: '#3498db', skill: 'Thái Cực Kiếm', icon: '☯️' },
-        'Đường Môn': { x: 50000, y: 85000, color: '#2ecc71', skill: 'Bạo Vũ Lê Hoa', icon: '🏹' },
-        'Nga Mi': { x: 15000, y: 85000, color: '#e91e63', skill: 'Cửu Âm Trảo', icon: '💅' },
-        'Minh Giáo': { x: 85000, y: 85000, color: '#e67e22', skill: 'Càn Khôn Na Di', icon: '🔥' },
-        'Cái Bang': { x: 50000, y: 50000, color: '#a52a2a', skill: 'Đả Cẩu Bổng', icon: '🐕' },
-        'Toàn Chân': { x: 30000, y: 30000, color: '#9b59b6', skill: 'Tiên Nhân Chỉ Lộ', icon: '✨' },
-        'Mộ Dung': { x: 70000, y: 70000, color: '#1abc9c', skill: 'Đẩu Chuyển Tinh Di', icon: '🔄' }
+<script>
+/**
+ * DỮ LIỆU GAME (DATABASE)
+ */
+const DB = {
+    mobs: [
+        { name: 'Thổ Phỉ', hp: 500, lv: 5, color: '#f44' },
+        { name: 'Ác Tăng', hp: 2000, lv: 25, color: '#f80' },
+        { name: 'Kiếm Khách', hp: 5000, lv: 50, color: '#a0f' }
+    ],
+    items: [
+        { name: 'Đồ Long Đao', price: 1000, pow: 500, icon: '⚔️' },
+        { name: 'Ỷ Thiên Kiếm', price: 1200, pow: 600, icon: '🗡️' },
+        { name: 'Cẩm Y Vệ', price: 2000, pow: 1000, icon: '👘' },
+        { name: 'Thần Mã', price: 5000, pow: 2500, icon: '🐎' }
+    ]
+};
+
+let player = {
+    x: 5000, y: 5000, lv: 1, exp: 0, next: 100, hp: 1000, maxHp: 1000,
+    money: 5000, pow: 2500, inv: [], dirX: 0, dirY: 0, anim: 0
+};
+
+let enemies = [];
+    const Engine = (() => {
+    const init = () => {
+        // Tạo shop
+        const sList = document.getElementById('shop-list');
+        DB.items.forEach(it => {
+            const btn = document.createElement('div');
+            btn.style = "background:#222; margin-bottom:5px; padding:8px; border:1px solid #444; cursor:pointer; font-size:12px;";
+            btn.innerHTML = `${it.icon} ${it.name} <br> <span style="color:yellow">${it.price} vàng</span>`;
+            btn.onclick = () => buyItem(it);
+            sList.appendChild(btn);
+        });
+
+        // Spawn quái
+        for(let i=0; i<100; i++) spawnMob();
+
+        loop();
+        setInterval(aiUpdate, 100);
+        setInterval(worldChat, 5000);
     };
 
-    let player = { 
-        x: 2000, y: 2000, lv: 1, exp: 0, money: 5000, pow: 1000, speed: 15, 
-        dir: {x:0, y:0}, lastDir: {x:1, y:0}, angle: 0, isAtk: false,
-        animFrame: 0
+    const toggleWindow = (id) => {
+        document.getElementById(id).classList.toggle('minimized');
     };
-    
-    let entities = []; // Bao gồm Quái, NPC, Boss
-    let particles = [];
 
-    function startGame() {
-        document.getElementById('gate').style.display = 'none';
-        initSects();
-        spawnBoss();
-        // Spawn NPC & Mobs
-        for(let i=0; i<150; i++) spawnEntity(Math.random()*WORLD_SIZE, Math.random()*WORLD_SIZE, 'mob');
-        for(let name in SECTS) spawnEntity(SECTS[name].x + 200, SECTS[name].y + 200, 'npc', name);
-        
-        requestAnimationFrame(gameLoop);
-        setInterval(aiDecision, 2000); // AI ra quyết định mỗi 2s
-    }
+    const buyItem = (it) => {
+        if(player.money >= it.price) {
+            player.money -= it.price;
+            player.inv.push(it);
+            player.pow += it.pow;
+            updateUI();
+            logChat(`[Cửa hàng]: Bạn đã mua ${it.name}!`);
+        } else {
+            logChat(`[Hệ thống]: Không đủ tiền!`);
+        }
+    };
 
-    function spawnEntity(x, y, type, sectName = '') {
-        const id = 'ent-' + Math.random();
-        const config = {
-            'mob': { name: 'Sát Thủ Lục Lâm', color: '#ff4444', hp: 200 },
-            'npc': { name: sectName + ' Trưởng Lão', color: SECTS[sectName]?.color || '#fff', hp: 999999 },
-            'boss': { name: 'HỎA KỲ LÂN', color: '#ff0000', hp: 50000 }
-        };
-        
-        const data = config[type];
+    const logChat = (msg) => {
+        const log = document.getElementById('chat-log');
+        log.innerHTML += `<div>${msg}</div>`;
+        log.scrollTop = log.scrollHeight;
+    };
+
+    const spawnMob = () => {
+        const m = DB.mobs[Math.floor(Math.random()*DB.mobs.length)];
+        const x = Math.random()*90000+5000, y = Math.random()*90000+5000;
+        const id = 'm-' + Math.random().toString(36).substr(2, 5);
         const html = `
-            <div id="${id}" class="entity ${type}" style="left:${x}px; top:${y}px">
-                <div class="chat-bubble" id="chat-${id}"></div>
+            <div id="${id}" class="entity" style="left:${x}px; top:${y}px">
                 <div class="stickman">
-                    <div class="npc-tag" style="color:${data.color}">${data.name}</div>
-                    <div class="head" style="border-color:${data.color}"></div>
-                    <div class="body-line" style="background:${data.color}"></div>
-                    <div class="arm al"></div><div class="arm ar"></div>
-                    <div class="leg ll"></div><div class="leg lr"></div>
+                    <div style="position:absolute; top:-30px; width:100px; left:-20px; text-align:center; font-size:10px; color:${m.color}">${m.name}</div>
+                    <div class="head" style="border-color:${m.color}"></div>
+                    <div class="torso" style="background:${m.color}"></div>
+                    <div class="arm" style="left:28px; background:${m.color}"></div>
+                    <div class="leg" style="left:28px; background:${m.color}"></div>
                 </div>
             </div>`;
-        document.getElementById('entity-layer').insertAdjacentHTML('beforeend', html);
-        
-        entities.push({ 
-            id, x, y, type, 
-            hp: data.hp, maxHp: data.hp, 
-            color: data.color, 
-            vx: 0, vy: 0, 
-            lastChat: 0 
-        });
-    }
+        document.getElementById('layer-ents').insertAdjacentHTML('beforeend', html);
+        enemies.push({ id, x, y, hp: m.hp, lv: m.lv, color: m.color });
+    };
 
-    // --- AI & CHAT SYSTEM ---
-    const AI_LINES = ["Kẻ nào guồng chân đến đây? 🤔", "Võ học vô biên! 📖", "Chết đi! 💀", "Vip quá đại hiệp ơi! 👍", "Hôm nay thời tiết đẹp ☀️"];
+    const atk = () => {
+        const hChat = document.getElementById('hero-chat');
+        hChat.innerText = "HÀYAAAA!!";
+        hChat.classList.add('active');
+        setTimeout(() => hChat.classList.remove('active'), 1000);
 
-    function aiDecision() {
-        entities.forEach(en => {
-            const dist = Math.hypot(player.x - en.x, player.y - en.y);
-            
-            // Nếu ở gần, AI sẽ Chat
-            if (dist < 500 && Date.now() - en.lastChat > 5000) {
-                showBubble(en.id, AI_LINES[Math.floor(Math.random() * AI_LINES.length)]);
-                en.lastChat = Date.now();
-            }
-
-            // Di chuyển AI mượt mà
-            if (en.type === 'mob' && dist < 1000) {
-                const angle = Math.atan2(player.y - en.y, player.x - en.x);
-                en.vx = Math.cos(angle) * 5;
-                en.vy = Math.sin(angle) * 5;
-            } else {
-                en.vx = (Math.random() - 0.5) * 4;
-                en.vy = (Math.random() - 0.5) * 4;
+        enemies.forEach((en, i) => {
+            if(Math.hypot(player.x - en.x, player.y - en.y) < 300) {
+                const d = player.pow + Math.floor(Math.random()*500);
+                en.hp -= d;
+                popDmg(en.x, en.y, d);
+                if(en.hp <= 0) {
+                    document.getElementById(en.id).remove();
+                    enemies.splice(i, 1);
+                    player.exp += 50; player.money += 100;
+                    updateUI();
+                    spawnMob();
+                }
             }
         });
-    }
+    };
 
-    function showBubble(id, text) {
-        const b = document.getElementById('chat-' + id);
-        if (b) {
-            b.innerText = text;
-            b.style.display = 'block';
-            b.style.opacity = '1';
-            setTimeout(() => { if(b) b.style.opacity = '0'; }, 3000);
-        }
-    }
+    const popDmg = (x, y, d) => {
+        const el = document.createElement('div');
+        el.className = 'dmg'; el.innerText = '-' + d;
+        el.style.left = x+'px'; el.style.top = y+'px';
+        document.getElementById('world').appendChild(el);
+        setTimeout(() => el.remove(), 800);
+    };
 
-    // --- MƯỢT MÀ CHUYỂN ĐỘNG (BONE ANIMATION) ---
-    function updateAnimations() {
-        // Player Animation
-        const isMoving = Math.abs(player.dir.x) > 0.1 || Math.abs(player.dir.y) > 0.1;
-        if (isMoving) {
-            player.animFrame += 0.2;
-            const walk = Math.sin(player.animFrame) * 30;
-            document.getElementById('leg-l').style.transform = `rotate(${90 + walk}deg)`;
-            document.getElementById('leg-r').style.transform = `rotate(${90 - walk}deg)`;
-            document.getElementById('arm-l').style.transform = `rotate(${150 - walk}deg)`;
-            document.getElementById('arm-r').style.transform = `rotate(${-30 - walk}deg)`;
-        }
-
-        // Entity Animation
-        entities.forEach(en => {
-            const el = document.getElementById(en.id);
-            if (!el) return;
-            
-            en.x += en.vx; en.y += en.vy;
-            el.style.left = en.x + 'px';
-            el.style.top = en.y + 'px';
-            
-            // Lật hướng nhìn
-            if (en.vx !== 0) el.querySelector('.stickman').style.transform = `scaleX(${en.vx > 0 ? 1 : -1})`;
-            
-            // Múa tay chân cho quái/npc
-            const wave = Math.sin(Date.now() / 200) * 20;
-            el.querySelectorAll('.leg').forEach((l, idx) => {
-                l.style.transform = `rotate(${90 + (idx === 0 ? wave : -wave)}deg)`;
-            });
+    const aiUpdate = () => {
+        enemies.forEach(en => {
+            if(Math.hypot(player.x - en.x, player.y - en.y) < 1000) {
+                const a = Math.atan2(player.y - en.y, player.x - en.x);
+                en.x += Math.cos(a)*6; en.y += Math.sin(a)*6;
+                const el = document.getElementById(en.id);
+                el.style.left = en.x+'px'; el.style.top = en.y+'px';
+            }
         });
-    }
+    };
 
-    // --- GAME LOOP ---
-    function gameLoop() {
-        // Move Player
-        player.x += player.dir.x * player.speed;
-        player.y += player.dir.y * player.speed;
-        
-        const hero = document.getElementById('hero');
-        hero.style.left = player.x + 'px';
-        hero.style.top = player.y + 'px';
-        if (player.dir.x !== 0) hero.querySelector('.stickman').style.transform = `scaleX(${player.dir.x > 0 ? 1 : -1})`;
-
-        // Camera
-        document.getElementById('map').style.transform = `translate(${window.innerWidth/2 - player.x}px, ${window.innerHeight/2 - player.y}px)`;
-        
-        // Cập nhật UI
-        document.getElementById('ui-pos').innerText = `${Math.floor(player.x)}, ${Math.floor(player.y)}`;
-        
-        updateAnimations();
-        requestAnimationFrame(gameLoop);
-    }
-
-    // --- JOYSTICK ---
-    const joyB = document.getElementById('joy-base'), joyS = document.getElementById('joy-stick');
-    joyB.addEventListener('touchmove', e => {
-        e.preventDefault();
-        const rect = joyB.getBoundingClientRect(), t = e.touches[0];
-        let x = t.clientX - rect.left - 75, y = t.clientY - rect.top - 75;
-        const d = Math.hypot(x, y);
-        if (d > 60) { x *= 60/d; y *= 60/d; }
-        joyS.style.transform = `translate(${x}px, ${y}px)`;
-        player.dir = { x: x/60, y: y/60 };
-        if (d > 10) player.lastDir = { x: x/d, y: y/d };
-    });
-    joyB.addEventListener('touchend', () => {
-        player.dir = {x:0, y:0};
-        joyS.style.transform = 'translate(0,0)';
-    });
-
-    // CSS bổ sung cho Chat Bubble mượt mà
-    const style = document.createElement('style');
-    style.innerHTML = `
-        .chat-bubble {
-            position: absolute; top: -80px; left: 50%; transform: translateX(-50%);
-            background: white; color: black; padding: 5px 12px; border-radius: 15px;
-            font-size: 12px; font-weight: bold; white-space: nowrap; display: none;
-            transition: opacity 0.3s; z-index: 200; border: 2px solid var(--gold);
+    const updateUI = () => {
+        if(player.exp >= player.next) {
+            player.lv++; player.exp = 0; player.next *= 2;
+            logChat(`[Hệ thống]: Chúc mừng bạn lên cấp ${player.lv}!`);
+            if(player.lv >= 3) document.getElementById('hero').classList.add('is-vip');
         }
-        .chat-bubble::after {
-            content: ''; position: absolute; bottom: -10px; left: 50%; transform: translateX(-50%);
-            border-left: 10px solid transparent; border-right: 10px solid transparent; border-top: 10px solid white;
-        }
-        .arm, .leg { position: absolute; width: 20px; height: 3px; background: inherit; transform-origin: left; }
-        .al { top: 25px; left: 24px; } .ar { top: 25px; left: 24px; }
-        .ll { top: 50px; left: 24px; } .lr { top: 50px; left: 24px; }
-    `;
-    document.head.appendChild(style);
+        document.getElementById('ui-lv').innerText = player.lv;
+        document.getElementById('ui-pow').innerText = player.pow.toLocaleString();
+        document.getElementById('ui-money').innerText = player.money.toLocaleString();
+        document.getElementById('exp-bar').style.width = (player.exp/player.next*100)+'%';
+        
+        const inv = document.getElementById('inv-list');
+        inv.innerHTML = player.inv.map(i => `<div style="padding:5px; border-bottom:1px solid #333">${i.icon} ${i.name}</div>`).join('');
+    };
 
-    function initSects() {
-        for(let s in SECTS) {
-            const sect = SECTS[s];
-            const html = `<div class="island" style="left:${sect.x-1000}px; top:${sect.y-1000}px; width:2000px; height:2000px; border:10px solid ${sect.color}22">
-                <h2 style="font-size:100px; color:${sect.color}22">${s}</h2>
-            </div>`;
-            document.getElementById('sect-layer').insertAdjacentHTML('beforeend', html);
+    const worldChat = () => {
+        const msgs = ["Săn Boss Hỏa Kỳ Lân không?", "Cần tìm sư phụ...", "Shop đang giảm giá kìa!", "Ai solo không?"];
+        logChat(`[Thế giới]: ${msgs[Math.floor(Math.random()*msgs.length)]}`);
+    };
+
+    const loop = () => {
+        player.x += player.dirX * 25; player.y += player.dirY * 25;
+        const h = document.getElementById('hero');
+        h.style.left = player.x+'px'; h.style.top = player.y+'px';
+
+        // Bone Anim
+        if(Math.hypot(player.dirX, player.dirY) > 0.1) {
+            player.anim += 0.3;
+            const s = Math.sin(player.anim)*30;
+            document.querySelectorAll('#hero .leg').forEach((l,i)=>l.style.transform=`rotate(${i==0?s:-s}deg)`);
+            document.querySelectorAll('#hero .arm').forEach((a,i)=>a.style.transform=`rotate(${i==0?-s:s}deg)`);
+            document.getElementById('hero-body').style.transform = `scaleX(${player.dirX > 0 ? 1 : -1})`;
         }
-    }
+
+        // Camera & MiniMap
+        document.getElementById('world').style.transform = `translate(${window.innerWidth/2 - player.x}px, ${window.innerHeight/2 - player.y}px)`;
+        document.getElementById('mini-hero').style.left = (player.x/100000*100)+'%';
+        document.getElementById('mini-hero').style.top = (player.y/100000*100)+'%';
+
+        requestAnimationFrame(loop);
+    };
+
+    // Joystick logic
+    const jB = document.getElementById('joy-base'), jS = document.getElementById('joy-stick');
+    jB.ontouchmove = (e) => {
+        const r = jB.getBoundingClientRect(), t = e.touches[0];
+        let x = t.clientX - r.left - 80, y = t.clientY - r.top - 80;
+        const d = Math.hypot(x,y); if(d > 60) { x*=60/d; y*=60/d; }
+        jS.style.transform = `translate(${x}px,${y}px)`;
+        player.dirX = x/60; player.dirY = y/60;
+    };
+    jB.ontouchend = () => { player.dirX = 0; player.dirY = 0; jS.style.transform = 'translate(0,0)'; };
+
+    return { init, atk, toggleWindow };
+})();
+
+function toggleWindow(id) { Engine.toggleWindow(id); }
+window.onload = Engine.init;
 </script>
 </body>
 </html>
