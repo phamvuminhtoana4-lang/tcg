@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, orientation=landscape">
-    <title>VÕ LÂM SUPREME: TIẾU NGẠO GIANG HỒ</title>
+    <title>VÕ LÂM SUPREME: SIÊU CẤP AI</title>
     <style>
         :root {
             --gold: #FFD700; --silver: #C0C0C0; --ui-bg: rgba(15, 15, 15, 0.95);
@@ -28,7 +28,7 @@
         }
         .island-label { font-size: 160px; color: rgba(255,255,255,0.02); font-weight: 900; text-transform: uppercase; pointer-events: none; }
 
-        /* --- ENTITIES (STICKMAN 2.0) --- */
+        /* --- ENTITIES --- */
         .entity { position: absolute; width: 50px; height: 70px; z-index: 100; pointer-events: none; transition: transform 0.1s; }
         .stickman { position: relative; width: 100%; height: 100%; }
         .head { position: absolute; width: 20px; height: 20px; border: 2.5px solid #fff; border-radius: 50%; top: 0; left: 15px; background: #000; }
@@ -36,7 +36,6 @@
         .arm { position: absolute; width: 22px; height: 2.5px; background: #fff; top: 25px; left: 24px; transform-origin: left; transition: 0.1s; }
         .leg { position: absolute; width: 22px; height: 2.5px; background: #fff; top: 48px; left: 24px; transform-origin: left; }
         
-        /* Elite & Boss Styles */
         .elite .head { border-color: #ff3300; box-shadow: 0 0 15px #ff3300; }
         .elite .body-line { background: #ff3300; }
         
@@ -44,12 +43,12 @@
         .boss .head { width: 60px; height: 60px; border-width: 6px; border-color: #ff0000; left: 45px; box-shadow: 0 0 30px #ff0000; }
         .boss .body-line { width: 8px; height: 100px; left: 71px; top: 60px; background: #ff0000; }
 
-        /* --- BỔ SUNG: NPC LABEL & CHAT --- */
-        .npc-tag { position: absolute; top: -25px; left: 50%; transform: translateX(-50%); font-size: 11px; white-space: nowrap; font-weight: bold; text-shadow: 1px 1px 2px #000; }
+        .npc-tag { position: absolute; top: -25px; left: 50%; transform: translateX(-50%); font-size: 11px; white-space: nowrap; font-weight: bold; text-shadow: 1px 1px 2px #000; padding: 2px 5px; border-radius: 3px; background: rgba(0,0,0,0.5); }
         
+        /* --- CHAT SYSTEM --- */
         #chat-main {
             position: fixed; bottom: 20px; left: 20px; width: 320px; height: 200px;
-            background: rgba(0, 0, 0, 0.8); border: 1px solid #444; border-radius: 8px;
+            background: rgba(0, 0, 0, 0.85); border: 1px solid #444; border-radius: 8px;
             z-index: 2000; display: flex; flex-direction: column; transition: 0.3s;
         }
         #chat-main.minimized { height: 35px; width: 160px; overflow: hidden; }
@@ -57,56 +56,48 @@
         #chat-list { flex: 1; padding: 10px; overflow-y: auto; font-size: 12px; line-height: 1.5; color: #ddd; scrollbar-width: none; }
         .c-msg { margin-bottom: 4px; border-bottom: 1px solid rgba(255,255,255,0.05); }
 
-        /* --- VFX SYSTEMS --- */
+        /* --- VFX --- */
         .fx-aoe { position: absolute; border-radius: 50%; border: 4px solid var(--gold); background: rgba(255,215,0,0.1); transform: translate(-50%, -50%) scale(0); animation: aoe-anim 0.5s ease-out forwards; pointer-events: none; }
         @keyframes aoe-anim { to { transform: translate(-50%, -50%) scale(1); opacity: 0; } }
-        
         .fx-slash { position: absolute; width: 120px; height: 20px; background: linear-gradient(90deg, transparent, #fff, transparent); transform: translate(-50%, -50%); animation: slash-anim 0.2s linear forwards; pointer-events: none; }
         @keyframes slash-anim { 0% { opacity: 1; transform: translate(-50%, -50%) scaleX(0); } 100% { opacity: 0; transform: translate(-50%, -50%) scaleX(1.5); } }
 
-        /* --- UI OVERLAYS --- */
+        /* --- HUD --- */
         .hud-left { position: fixed; top: 20px; left: 20px; z-index: 1000; }
         .player-box { background: var(--ui-bg); border-left: 5px solid var(--gold); padding: 15px; border-radius: 0 10px 10px 0; min-width: 250px; box-shadow: 5px 5px 20px rgba(0,0,0,0.5); }
         .bar-bg { width: 100%; height: 6px; background: #222; margin: 8px 0; border-radius: 3px; overflow: hidden; }
         .bar-fill { height: 100%; width: 0%; transition: width 0.3s; }
         
-        /* Boss Health */
         #boss-hud { position: fixed; top: 30px; left: 50%; transform: translateX(-50%); width: 500px; display: none; z-index: 1100; text-align: center; }
         .boss-hp-bg { width: 100%; height: 12px; background: #200; border: 1px solid #ff4444; border-radius: 6px; overflow: hidden; margin-top: 5px; }
         #boss-hp-fill { height: 100%; width: 100%; background: linear-gradient(90deg, #600, #f00); transition: width 0.1s; }
 
-        /* --- NAVIGATION & MENU --- */
         .menu-right { position: fixed; right: 20px; top: 20px; display: flex; flex-direction: column; gap: 10px; z-index: 1001; }
         .circle-btn { width: 60px; height: 60px; background: var(--ui-bg); border: 1px solid #333; border-radius: 50%; color: var(--gold); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 24px; transition: 0.2s; }
-        .circle-btn:hover { background: #222; border-color: var(--gold); }
-
         .panel { position: fixed; right: 90px; top: 20px; width: 350px; height: 500px; background: var(--ui-bg); border: 1px solid #444; border-radius: 15px; display: none; flex-direction: column; padding: 20px; z-index: 1002; }
         .panel-title { color: var(--gold); font-size: 20px; font-weight: bold; border-bottom: 1px solid #333; padding-bottom: 10px; margin-bottom: 15px; }
 
         /* --- CONTROLS --- */
         #joy-base { position: fixed; bottom: 60px; left: 60px; width: 140px; height: 140px; background: rgba(255,255,255,0.03); border: 2px solid rgba(255,255,255,0.1); border-radius: 50%; }
-        #joy-stick { position: absolute; width: 60px; height: 60px; background: rgba(255,255,255,0.15); border-radius: 50%; top: 40px; left: 40px; box-shadow: 0 0 20px rgba(0,0,0,0.5); }
-        
+        #joy-stick { position: absolute; width: 60px; height: 60px; background: rgba(255,255,255,0.15); border-radius: 50%; top: 40px; left: 40px; }
         .action-cluster { position: fixed; bottom: 40px; right: 40px; display: flex; flex-direction: column; gap: 20px; align-items: flex-end; }
-        .main-atk { width: 110px; height: 110px; border-radius: 50%; background: radial-gradient(circle, #800, #300); border: 4px solid #fff; color: #fff; font-size: 22px; font-weight: bold; cursor: pointer; box-shadow: 0 0 30px rgba(255,0,0,0.4); }
+        .main-atk { width: 110px; height: 110px; border-radius: 50%; background: radial-gradient(circle, #800, #300); border: 4px solid #fff; color: #fff; font-size: 22px; font-weight: bold; cursor: pointer; }
         .skill-grid { display: flex; gap: 12px; }
         .skill-node { width: 65px; height: 65px; border-radius: 50%; background: #151515; border: 2px solid var(--gold); color: var(--gold); font-size: 11px; font-weight: bold; cursor: pointer; position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center; text-align: center; }
-        .cd-mask { position: absolute; bottom: 0; width: 100%; height: 0%; background: rgba(0,0,0,0.7); transition: height linear; }
+        .cd-mask { position: absolute; bottom: 0; width: 100%; height: 0%; background: rgba(0,0,0,0.7); }
 
-        /* --- RADAR --- */
         #radar { width: 100%; height: 250px; background: #000; border: 1px solid #333; position: relative; overflow: hidden; border-radius: 10px; }
         .dot { position: absolute; width: 6px; height: 6px; border-radius: 50%; transform: translate(-50%, -50%); }
 
-        #start-gate { position: fixed; inset: 0; background: #000; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
-        .gate-btn { padding: 20px 80px; background: none; border: 2px solid var(--gold); color: var(--gold); font-size: 24px; cursor: pointer; font-weight: bold; margin-top: 30px; transition: 0.3s; }
-        .gate-btn:hover { background: var(--gold); color: #000; }
+        #start-gate { position: fixed; inset: 0; background: #000; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .gate-btn { padding: 20px 80px; background: none; border: 2px solid var(--gold); color: var(--gold); font-size: 24px; cursor: pointer; font-weight: bold; margin-top: 30px; }
     </style>
 </head>
 <body>
 
 <div id="start-gate">
     <h1 style="color:var(--gold); font-size: 60px; margin:0;">VÕ LÂM SUPREME</h1>
-    <p style="letter-spacing: 15px; color: #555;">TIẾU NGẠO GIANG HỒ</p>
+    <p style="letter-spacing: 15px; color: #555;">SIÊU CẤP AI PHIÊN BẢN</p>
     <button class="gate-btn" onclick="startGame()">BƯỚC VÀO GIANG HỒ</button>
 </div>
 
@@ -121,7 +112,8 @@
         <div id="mob-layer"></div>
         <div id="hero" class="entity">
             <div class="stickman">
-                <div class="head" style="border-color: var(--gold); box-shadow: 0 0 10px var(--gold);"></div>
+                <div class="npc-tag" style="color:var(--gold)">Đại Hiệp</div>
+                <div class="head" style="border-color: var(--gold);"></div>
                 <div class="body-line"></div>
                 <div class="arm" id="arm-l" style="transform: rotate(150deg);"></div>
                 <div class="arm" id="arm-r" style="transform: rotate(-30deg);"></div>
@@ -140,10 +132,10 @@
         </div>
         <div class="bar-bg"><div id="ui-exp" class="bar-fill" style="background: var(--exp-color);"></div></div>
         <div style="display:flex; justify-content:space-between; font-size:14px; margin-top:5px;">
-            <span>Bạc: <b id="ui-money" style="color:#eee">0</b></span>
+            <span>Bạc: <b id="ui-money">0</b></span>
             <span>LC: <b id="ui-pow" style="color:var(--gold)">10</b></span>
         </div>
-        <div style="font-size:10px; color:#444; margin-top:10px; font-family:monospace;">Tọa độ: <span id="ui-x">0</span> | <span id="ui-y">0</span></div>
+        <div style="font-size:10px; color:#444; margin-top:10px;">Tọa độ: <span id="ui-x">0</span> | <span id="ui-y">0</span></div>
     </div>
 </div>
 
@@ -164,11 +156,6 @@
 <div id="pan-map" class="panel">
     <div class="panel-title">THIÊN ĐỊA ĐỒ <span onclick="closePanels()" style="float:right; cursor:pointer">×</span></div>
     <div id="radar"><div id="radar-p" class="dot" style="background:red; border:1px solid #fff; z-index:10;"></div></div>
-    <div style="font-size:12px; color:#666; margin-top:15px;">
-        <p>• Chấm đỏ: Vị trí của bạn</p>
-        <p>• Chấm xanh/vàng: Tông môn</p>
-        <p>• Trung tâm (50k, 50k): Sào huyệt Ma Vương</p>
-    </div>
 </div>
 
 <div id="pan-shop" class="panel">
@@ -188,51 +175,45 @@
 </div>
 
 <script>
-    /* --- CONFIGURATION --- */
     const WORLD_SIZE = 100000;
     const SECTS = {
-        'Thiếu Lâm': { x: 15000, y: 15000, color: '#f1c40f', item: 'Thiết Bổng', price: 200, pow: 50, skill: 'Sư Tử Hống', type: 'AOE', lines: ["Nam mô a di đà phật!", "Thiên hạ võ công xuất Thiếu Lâm!", "Thí chủ hãy quay đầu là bờ."] },
-        'Võ Đang': { x: 85000, y: 15000, color: '#3498db', item: 'Thanh Kiếm', price: 250, pow: 60, skill: 'Thái Cực Kiếm', type: 'PROJ', lines: ["Thái cực sinh lưỡng nghi...", "Đạo hữu dừng chân uống chén trà.", "Võ Đang kiếm pháp thiên hạ vô song!"] },
-        'Đường Môn': { x: 50000, y: 85000, color: '#2ecc71', item: 'Ám Khí', price: 300, pow: 55, skill: 'Bạo Vũ Lê Hoa', type: 'MULTI', lines: ["Ám khí vô hình!", "Đừng để bị ta nhắm trúng.", "Độc môn Đường Gia bất khả xâm phạm."] },
-        'Nga Mi': { x: 15000, y: 85000, color: '#e91e63', item: 'Trầm Hương', price: 220, pow: 45, skill: 'Cửu Âm Trảo', type: 'BUFF', lines: ["Cửu Âm Bạch Cốt Trảo!", "Nga Mi phái thanh tịnh thoát tục.", "Thế gian tình là chi?"] },
-        'Minh Giáo': { x: 85000, y: 55000, color: '#9b59b6', item: 'Thánh Lệnh', price: 450, pow: 80, skill: 'Càn Khôn Na Di', type: 'DASH', lines: ["Thánh hỏa quang minh!", "Càn Khôn Na Di đệ thất tầng!", "Minh Giáo giáo chủ văn thành võ đức."] }
+        'Thiếu Lâm': { x: 15000, y: 15000, color: '#f1c40f', item: 'Thiết Bổng', price: 200, pow: 50, skill: 'Sư Tử Hống', type: 'AOE', lines: ["Nam mô a di đà phật!", "Thiên hạ võ công xuất Thiếu Lâm!", "Quay đầu là bờ!"] },
+        'Võ Đang': { x: 85000, y: 15000, color: '#3498db', item: 'Thanh Kiếm', price: 250, pow: 60, skill: 'Thái Cực Kiếm', type: 'PROJ', lines: ["Thái cực sinh lưỡng nghi...", "Võ Đang kiếm pháp thiên hạ vô song!"] },
+        'Đường Môn': { x: 50000, y: 85000, color: '#2ecc71', item: 'Ám Khí', price: 300, pow: 55, skill: 'Bạo Vũ Lê Hoa', type: 'MULTI', lines: ["Ám khí vô hình!", "Đừng để bị ta nhắm trúng."] },
+        'Nga Mi': { x: 15000, y: 85000, color: '#e91e63', item: 'Trầm Hương', price: 220, pow: 45, skill: 'Cửu Âm Trảo', type: 'BUFF', lines: ["Cửu Âm Bạch Cốt Trảo!", "Nga Mi thanh tịnh thoát tục."] },
+        'Minh Giáo': { x: 85000, y: 55000, color: '#9b59b6', item: 'Thánh Lệnh', price: 450, pow: 80, skill: 'Càn Khôn Na Di', type: 'DASH', lines: ["Thánh hỏa quang minh!", "Càn Khôn Na Di đệ thất tầng!"] }
     };
 
-    let player = { 
-        x: 2000, y: 2000, lv: 1, exp: 0, money: 0, pow: 10, speed: 13, 
-        sects: [], skills: [], items: [], cds: {}, 
-        dir: {x:0, y:0}, lastDir: {x:1, y:0}, isAtk: false 
-    };
-
+    let player = { x: 2000, y: 2000, lv: 1, exp: 0, money: 0, pow: 10, speed: 13, sects: [], skills: [], items: [], cds: {}, dir: {x:0, y:0}, lastDir: {x:1, y:0}, isAtk: false };
     let mobs = [];
     let boss = null;
-    let aiEntities = []; // Danh sách NPC AI
+    let aiEntities = []; 
 
-    /* --- BỔ SUNG: HỆ THỐNG CHAT --- */
     function addChat(name, text, color = "#fff") {
         const list = document.getElementById('chat-list');
         const m = document.createElement('div');
         m.className = 'c-msg';
-        m.innerHTML = `<b style="color:${color}">${name}:</b> ${text}`;
+        m.innerHTML = `<b style="color:${color}">[${name}]:</b> ${text}`;
         list.appendChild(m);
         list.scrollTop = list.scrollHeight;
-        if(list.children.length > 30) list.removeChild(list.firstChild);
+        if(list.children.length > 25) list.removeChild(list.firstChild);
     }
+
     function toggleChat() {
         const c = document.getElementById('chat-main');
         c.classList.toggle('minimized');
         document.getElementById('chat-icon').innerText = c.classList.contains('minimized') ? '▲' : '▼';
     }
 
-    /* --- GAME START --- */
     function startGame() {
         document.getElementById('start-gate').style.display = 'none';
         initMap();
         spawnBoss();
-        initNPCs(); // Bổ sung NPC AI
-        for(let i=0; i<200; i++) spawnMob(Math.random() > 0.8 ? 'elite' : 'normal');
+        initNPCs();
+        for(let i=0; i<150; i++) spawnMob(Math.random() > 0.8 ? 'elite' : 'normal');
         requestAnimationFrame(gameLoop);
-        setInterval(aiSpeechLogic, 3000); // Bổ sung logic NPC chat
+        setInterval(aiLogicTick, 100); 
+        setInterval(aiSpeechTick, 4000); 
     }
 
     function initMap() {
@@ -254,23 +235,19 @@
         });
     }
 
-    /* --- BỔ SUNG: NPC AI SYSTEM --- */
+    /* --- AI SYSTEM (CƠ ĐỘNG) --- */
     function initNPCs() {
         Object.keys(SECTS).forEach(sName => {
-            for(let i=0; i<3; i++) {
-                createAI(
-                    SECTS[sName].x + (Math.random()-0.5)*2000,
-                    SECTS[sName].y + (Math.random()-0.5)*2000,
-                    sName + " Đệ Tử", SECTS[sName].color, 'friend', SECTS[sName].lines
-                );
+            for(let i=0; i<4; i++) {
+                createAI(SECTS[sName].x + (Math.random()-0.5)*2500, SECTS[sName].y + (Math.random()-0.5)*2500, sName + " Đệ Tử", SECTS[sName].color, 'patrol', SECTS[sName].lines);
             }
         });
-        for(let i=0; i<20; i++) {
-            createAI(Math.random()*WORLD_SIZE, Math.random()*WORLD_SIZE, "Ngoại Đạo", "#ff9900", "enemy", ["Đứng lại đó!", "Võ công của ngươi quá tệ!", "Nộp bạc ra đây!"]);
+        for(let i=0; i<30; i++) {
+            createAI(Math.random()*WORLD_SIZE, Math.random()*WORLD_SIZE, "Lục Lâm Thảo Khấu", "#ff5500", 'hostile', ["Nộp tiền mãi lộ!", "Để mạng lại đây!", "Gặp ta là xui rồi!"]);
         }
     }
 
-    function createAI(x, y, name, color, type, lines) {
+    function createAI(x, y, name, color, behavior, lines) {
         const id = 'ai-' + Math.random();
         const html = `<div id="${id}" class="entity" style="left:${x}px; top:${y}px">
             <div class="stickman">
@@ -279,111 +256,99 @@
             </div>
         </div>`;
         document.getElementById('mob-layer').insertAdjacentHTML('beforeend', html);
-        aiEntities.push({ id, x, y, name, color, type, lines, lastChat: 0 });
+        aiEntities.push({ id, x, y, startX: x, startY: y, name, color, behavior, lines, speed: 4 + Math.random()*4 });
     }
 
-    function aiSpeechLogic() {
+    function aiLogicTick() {
         aiEntities.forEach(n => {
             const dist = Math.hypot(player.x - n.x, player.y - n.y);
-            if(dist < 1500 && Math.random() > 0.6) {
-                const text = n.lines[Math.floor(Math.random()*n.lines.length)];
-                addChat(n.name, text, n.color);
+            const el = document.getElementById(n.id);
+            if(!el) return;
+
+            if(n.behavior === 'hostile' && dist < 1200) {
+                const angle = Math.atan2(player.y - n.y, player.x - n.x);
+                n.x += Math.cos(angle) * n.speed; n.y += Math.sin(angle) * n.speed;
+            } else {
+                n.x += (Math.random()-0.5)*15; n.y += (Math.random()-0.5)*15;
+                if(Math.hypot(n.x - n.startX, n.y - n.startY) > 2000) { n.x = n.startX; n.y = n.startY; }
             }
+            el.style.left = n.x + 'px'; el.style.top = n.y + 'px';
+            el.style.transform = (player.x < n.x) ? 'scaleX(-1)' : 'scaleX(1)';
         });
-        if(boss && Math.random() > 0.95) addChat("MA VƯƠNG", "Lũ kiến hôi các ngươi phải chết!", "red");
     }
 
-    /* --- MOB SYSTEM --- */
+    function aiSpeechTick() {
+        if(aiEntities.length === 0) return;
+        const n = aiEntities[Math.floor(Math.random()*aiEntities.length)];
+        addChat(n.name, n.lines[Math.floor(Math.random()*n.lines.length)], n.color);
+    }
+
+    /* --- GAME LOGIC --- */
     function spawnMob(type) {
         const id = 'm-' + Math.random();
         const mx = Math.random() * WORLD_SIZE; const my = Math.random() * WORLD_SIZE;
-        const hp = type === 'elite' ? 60 : 25;
-        const html = `<div id="${id}" class="entity ${type}" style="left:${mx}px; top:${my}px; opacity:0.4;">
-                        <div class="stickman"><div class="head"></div><div class="body-line"></div></div>
-                      </div>`;
+        const hp = type === 'elite' ? 100 : 30;
+        const html = `<div id="${id}" class="entity ${type}" style="left:${mx}px; top:${my}px; opacity:0.6;"><div class="stickman"><div class="head"></div><div class="body-line"></div></div></div>`;
         document.getElementById('mob-layer').insertAdjacentHTML('beforeend', html);
         mobs.push({ id, x: mx, y: my, hp, maxHp: hp, type });
     }
 
     function spawnBoss() {
         const bx = 50000, by = 50000;
-        const html = `<div id="boss-ent" class="entity boss" style="left:${bx}px; top:${by}px">
-                        <div class="stickman"><div class="head"></div><div class="body-line"></div></div>
-                      </div>`;
+        const html = `<div id="boss-ent" class="entity boss" style="left:${bx}px; top:${by}px"><div class="stickman"><div class="head"></div><div class="body-line"></div></div></div>`;
         document.getElementById('mob-layer').insertAdjacentHTML('beforeend', html);
-        boss = { id: 'boss-ent', x: bx, y: by, hp: 10000, maxHp: 10000 };
+        boss = { id: 'boss-ent', x: bx, y: by, hp: 15000, maxHp: 15000 };
     }
 
-    /* --- SKILL SYSTEM --- */
     function useSkill(type) {
         if(player.cds[type] || player.isAtk) return;
-
         if(type === 'Normal') {
             player.isAtk = true;
             document.getElementById('arm-r').style.transform = 'rotate(70deg)';
-            createFX(player.x + player.lastDir.x*50, player.y + player.lastDir.y*50, 'fx-slash');
-            checkHit(200);
+            createFX(player.x + player.lastDir.x*60, player.y + player.lastDir.y*60, 'fx-slash');
+            checkHit(220);
             setTimeout(() => { document.getElementById('arm-r').style.transform = 'rotate(-30deg)'; player.isAtk = false; }, 150);
         } else {
             const s = Object.values(SECTS).find(s => s.skill === type);
-            executeSkillLogic(s);
-            startCD(type, 4000);
-        }
-    }
-
-    function executeSkillLogic(s) {
-        if(s.type === 'AOE') {
-            createFX(player.x, player.y, 'fx-aoe', 600);
-            checkHit(600);
-        } else if(s.type === 'PROJ') {
-            fireProj(player.lastDir);
-        } else if(s.type === 'MULTI') {
-            for(let i=0; i<8; i++) {
-                const ang = (i*45) * (Math.PI/180);
-                fireProj({x: Math.cos(ang), y: Math.sin(ang)});
-            }
-        } else if(s.type === 'BUFF') {
-            player.speed = 30;
-            setTimeout(() => player.speed = 13, 3000);
-        } else if(s.type === 'DASH') {
-            player.x += player.lastDir.x * 800; player.y += player.lastDir.y * 800;
+            if(s.type === 'AOE') { createFX(player.x, player.y, 'fx-aoe', 600); checkHit(600); }
+            else if(s.type === 'PROJ') fireProj(player.lastDir);
+            else if(s.type === 'DASH') { player.x += player.lastDir.x*1000; player.y += player.lastDir.y*1000; checkHit(300); }
+            startCD(type, 3000);
         }
     }
 
     function fireProj(dir) {
-         function fireProj(dir) {
-        const id = 'f-'+Math.random();
-        let fx = player.x, fy = player.y;
-        const html = `<div id="${id}" style="position:absolute; width:40px; height:4px; background:gold; box-shadow:0 0 10px gold; left:${fx}px; top:${fy}px; transform:rotate(${Math.atan2(dir.y, dir.x)}rad); z-index:90;"></div>`;
+        const id = 'p-'+Math.random();
+        let px = player.x, py = player.y;
+        const html = `<div id="${id}" style="position:absolute; width:30px; height:6px; background:cyan; left:${px}px; top:${py}px; transform:rotate(${Math.atan2(dir.y, dir.x)}rad); z-index:99; box-shadow:0 0 10px cyan;"></div>`;
         document.getElementById('map').insertAdjacentHTML('beforeend', html);
-        let life = 0;
+        let dist = 0;
         const move = setInterval(() => {
-            fx += dir.x*30; fy += dir.y*30;
+            px += dir.x*40; py += dir.y*40; dist++;
             const el = document.getElementById(id);
-            if(el) { el.style.left = fx+'px'; el.style.top = fy+'px'; }
-            mobs.forEach((m, i) => {
-                if(Math.hypot(fx-m.x, fy-m.y) < 150) { damageMob(m, i, 50); clearInterval(move); el?.remove(); }
-            });
-            if(++life > 50) { clearInterval(move); el?.remove(); }
+            if(el) { el.style.left = px+'px'; el.style.top = py+'px'; }
+            mobs.forEach((m, i) => { if(Math.hypot(px-m.x, py-m.y) < 150) { damageMob(m, i, 100); clearInterval(move); el?.remove(); }});
+            if(dist > 40) { clearInterval(move); el?.remove(); }
         }, 20);
     }
 
     function checkHit(range) {
-        mobs.forEach((m, i) => {
-            if(Math.hypot(player.x - m.x, player.y - m.y) < range) damageMob(m, i, player.pow);
+        mobs.forEach((m, i) => { if(Math.hypot(playe
+        r.x - m.x, player.y - m.y) < range) damageMob(m, i, player.pow); 
         });
-        if(boss && Math.hypot(player.x - boss.x, player.y - boss.y) < range + 100) {
-            damageBoss(player.pow);
-        }
+        if(boss && Math.hypot(player.x - boss.x, player.y - boss.y) < range + 150) damageBoss(player.pow);
     }
 
     function damageMob(m, i, dmg) {
         m.hp -= dmg;
+        // Hiệu ứng khi trúng quái
         if(m.hp <= 0) {
-            document.getElementById(m.id).remove();
-            player.exp += m.type === 'elite' ? 25 : 8;
-            if(Math.random() > 0.85) player.money += m.type === 'elite' ? 8 : 2;
-            mobs.splice(i, 1); spawnMob(m.type);
+            const el = document.getElementById(m.id); 
+            if(el) el.remove();
+            player.exp += 15; 
+            player.money += 5; 
+            mobs.splice(i, 1); 
+            spawnMob(m.type); // Tạo lại quái mới
             updateUI();
         }
     }
@@ -392,52 +357,61 @@
         document.getElementById('boss-hud').style.display = 'block';
         boss.hp -= dmg;
         document.getElementById('boss-hp-fill').style.width = (boss.hp/boss.maxHp*100)+'%';
-        if(boss.hp <= 0) {
-            alert("MA VƯƠNG ĐÃ NGÃ XUỐNG! GIANG HỒ BÌNH BIẾN.");
-            player.money += 1000; player.exp += 5000;
-            document.getElementById(boss.id).remove();
-            boss = null;
-            document.getElementById('boss-hud').style.display = 'none';
+        
+        if(Math.random() > 0.9) {
+            addChat("MA VƯƠNG", "Chút sát thương này chẳng thấm thía gì!", "red");
+        }
+
+        if(boss.hp <= 0) { 
+            addChat("HỆ THỐNG", "CHÚC MỪNG! MA VƯƠNG CHIẾN THẦN ĐÃ BỊ TIÊU DIỆT!", "red"); 
+            const bEl = document.getElementById(boss.id);
+            if(bEl) bEl.remove();
+            boss = null; 
+            player.money += 1000;
+            player.exp += 500;
+            updateUI();
         }
     }
 
-    /* --- HELPERS --- */
     function createFX(x, y, cls, size=120) {
-        const f = document.createElement('div');
-        f.className = cls; f.style.left = x+'px'; f.style.top = y+'px';
+        const f = document.createElement('div'); 
+        f.className = cls; 
+        f.style.left = x+'px'; 
+        f.style.top = y+'px';
         if(cls === 'fx-aoe') { f.style.width = f.style.height = size+'px'; }
-        document.getElementById('map').appendChild(f);
+        document.getElementById('map').appendChild(f); 
         setTimeout(() => f.remove(), 500);
     }
 
     function startCD(skill, ms) {
         player.cds[skill] = true;
         const m = document.getElementById('mask-'+skill);
-        if(m) {
-            m.style.height = '100%'; m.style.transition = 'none';
-            setTimeout(() => { m.style.transition = `height ${ms}ms linear`; m.style.height = '0%'; }, 50);
-            setTimeout(() => player.cds[skill] = false, ms);
+        if(m) { 
+            m.style.height = '100%'; 
+            setTimeout(() => { 
+                m.style.transition = `height ${ms}ms linear`; 
+                m.style.height = '0%'; 
+            }, 50); 
         }
+        setTimeout(() => player.cds[skill] = false, ms);
     }
 
+    /* --- HỆ THỐNG GIAO DIỆN & CỬA HÀNG --- */
     function updateUI() {
         if(player.exp >= 100) { 
             player.lv++; 
             player.exp = 0; 
-            player.pow += 15; 
-            addChat("Hệ thống", "Chúc mừng Đại Hiệp đã thăng cấp!", "lime"); 
+            player.pow += 25; 
+            player.speed += 0.5;
+            addChat("Hệ thống", "Chúc mừng Đại Hiệp thăng lên Cấp " + player.lv + "!", "lime"); 
         }
+        
         document.getElementById('ui-lv').innerText = player.lv;
         document.getElementById('ui-money').innerText = player.money;
         document.getElementById('ui-pow').innerText = player.pow;
         document.getElementById('ui-exp').style.width = player.exp + '%';
         document.getElementById('ui-x').innerText = Math.floor(player.x);
         document.getElementById('ui-y').innerText = Math.floor(player.y);
-        document.getElementById('ui-sect').innerText = player.sects.length ? player.sects[0] : 'Vô Danh';
-        
-        const rp = document.getElementById('radar-p');
-        rp.style.left = (player.x/WORLD_SIZE*100)+'%'; 
-        rp.style.top = (player.y/WORLD_SIZE*100)+'%';
         
         updateShop();
     }
@@ -448,32 +422,30 @@
         if(near) {
             const s = SECTS[near];
             cont.innerHTML = `
-                <div style="background:#222; padding:15px; border-radius:10px; border:1px solid var(--gold);">
-                    <b style="color:var(--gold)">${near}</b>
-                    <hr style="border:0.5px solid #333; margin:10px 0;">
-                    <p>Trang bị: ${s.item} (+${s.pow} LC)<br>Giá: ${s.price} Bạc</p>
-                      <button onclick="buyItem('${near}')" style="width:100%; padding:10px; background:var(--gold); border:none; font-weight:bold; cursor:pointer; color:#000;" ${player.money < s.price ? 'disabled' : ''}>MUA TRANG BỊ</button>
-                    <p style="margin-top:15px;">Võ công: ${s.skill} (Yêu cầu Cấp 30)</p>
-                    <button onclick="learnSkill('${near}')" style="width:100%; padding:10px; background:#00d4ff; border:none; font-weight:bold; cursor:pointer; color:#000;" ${player.lv < 30 ? 'disabled' : ''}>BÁI SƯ HỌC VÕ</button>
+                <div style="background:#222; padding:15px; border-radius:10px; border:1px solid gold;">
+                    <b style="color:gold; font-size:18px;">${near} Phái</b>
+                    <hr style="border:0.5px solid #444; margin:10px 0;">
+                    <p>Vũ khí: <span style="color:cyan">${s.item}</span> (+${s.pow} LC)</p>
+                    <p>Giá: <span style="color:yellow">${s.price} Bạc</span></p>
+                    <button onclick="buyItem('${near}')" style="width:100%; padding:10px; background:gold; border:none; font-weight:bold; border-radius:5px; cursor:pointer;" ${player.money < s.price ? 'disabled' : ''}>MUA TRANG BỊ</button>
+                    
+                    <p style="margin-top:15px;">Tuyệt kỹ: <span style="color:magenta">${s.skill}</span></p>
+                    <button onclick="learnSkill('${near}')" style="width:100%; padding:10px; background:cyan; border:none; font-weight:bold; border-radius:5px; cursor:pointer;">BÁI SƯ HỌC VÕ</button>
                 </div>`;
         } else {
-            cont.innerHTML = `<p style="text-align:center; color:#444; margin-top:100px;">Đại hiệp cần di chuyển đến phạm vi các Tông môn trên Radar để giao dịch.</p>`;
+            cont.innerHTML = `<p style="text-align:center; color:#666; margin-top:100px;">Hãy đến gần các Tông môn trên bản đồ để giao dịch.</p>`;
         }
     }
 
     function buyItem(n) {
         const s = SECTS[n];
-        if(player.money >= s.price) {
+        if(player.money >= s.price) { 
             player.money -= s.price; 
             player.pow += s.pow; 
-            player.items.push(s.item);
-            document.getElementById('arm-r').style.boxShadow = "0 0 10px cyan";
-            document.getElementById('arm-r').style.background = "cyan";
-            addChat("Hệ thống", "Bạn đã mua " + s.item, "cyan");
+            player.items.push(s.item); 
+            addChat("Hệ thống", "Bạn đã mua " + s.item + "!", "cyan");
             updateUI(); 
-            updateBag();
-        } else {
-            alert("Không đủ bạc! Hãy đi tiêu diệt thêm quái vật.");
+            updateBag(); 
         }
     }
 
@@ -481,98 +453,79 @@
         const s = SECTS[n];
         if(!player.sects.includes(n)) {
             player.sects.push(n);
-            const btnHtml = `
+            const btn = `
                 <button class="skill-node" onclick="useSkill('${s.skill}')">
                     ${s.skill.substring(0,2)}
                     <div id="mask-${s.skill}" class="cd-mask"></div>
-                    <span style="position:absolute; bottom:2px; font-size:7px; width:100%; left:0;">${s.skill}</span>
+                    <span style="position:absolute; bottom:2px; font-size:8px; width:100%; left:0;">${s.skill}</span>
                 </button>`;
-            document.getElementById('skill-bar').insertAdjacentHTML('beforeend', btnHtml);
-            addChat("Hệ thống", "Bái kiến " + n + " Tông môn thành công!", s.color);
-            updateUI();
-        } else {
-            alert("Đại hiệp đã học võ công của môn phái này rồi!");
+            document.getElementById('skill-bar').insertAdjacentHTML('beforeend', btn);
+            addChat("Hệ thống", "Đã học tuyệt kỹ " + s.skill, s.color);
         }
     }
 
     function updateBag() {
-        const cont = document.getElementById('bag-content');
+        const bag = document.getElementById('bag-content');
         if(player.items.length === 0) {
-            cont.innerHTML = `<p style="text-align:center; color:#444;">Hành trang trống rỗng...</p>`;
+            bag.innerHTML = `<p style="text-align:center; color:#444;">Trống...</p>`;
             return;
         }
-        cont.innerHTML = player.items.map(i => `
-            <div style="background:#222; padding:12px; margin-bottom:8px; border-radius:8px; border-left:3px solid var(--gold); display:flex; justify-content:space-between;">
-                <span>🗡️ ${i}</span>
-                <span style="color:var(--gold); font-size:12px;">Đang mang</span>
+        bag.innerHTML = player.items.map(i => `
+            <div style="background:#222; padding:10px; margin-bottom:5px; border-radius:5px; border-left:3px solid gold;">
+                🗡️ ${i} (Đã trang bị)
             </div>`).join('');
     }
 
-    function openPanel(id) {
+    function openPanel(id) { 
         closePanels(); 
-        document.getElementById(id).style.display = 'flex';
+        document.getElementById(id).style.display = 'flex'; 
+    }
+    
+    function closePanels() { 
+        document.querySelectorAll('.panel').forEach(p => p.style.display = 'none'); 
     }
 
-    function closePanels() {
-        document.querySelectorAll('.panel').forEach(p => p.style.display = 'none');
-    }
-
-    /* --- CONTROLS SYSTEM --- */
+    /* --- ĐIỀU KHIỂN & VÒNG LẶP GAME --- */
     const joyB = document.getElementById('joy-base');
     const joyS = document.getElementById('joy-stick');
     
-    joyB.addEventListener('touchstart', moveStick);
-    joyB.addEventListener('touchmove', moveStick);
+    joyB.addEventListener('touchstart', moveS); 
+    joyB.addEventListener('touchmove', moveS);
     joyB.addEventListener('touchend', () => { 
         player.dir = {x:0, y:0}; 
-        joyS.style.left = '40px'; 
-        joyS.style.top = '40px'; 
+        joyS.style.left = '40px'; joyS.style.top = '40px'; 
     });
 
-    function moveStick(e) {
-        e.preventDefault();
-        const r = joyB.getBoundingClientRect();
-        const t = e.touches[0];
-        let x = t.clientX - r.left - 70; 
-        let y = t.clientY - r.top - 70;
-        const d = Math.hypot(x, y);
+    function moveS(e) {
+        e.preventDefault(); 
+        const r = joyB.getBoundingClientRect(), t = e.touches[0];
+        let x = t.clientX - r.left - 70, y = t.clientY - r.top - 70;
+        const d = Math.hypot(x, y); 
         if(d > 50) { x *= 50/d; y *= 50/d; }
-        joyS.style.left = (x+40)+'px'; 
-        joyS.style.top = (y+40)+'px';
-        player.dir = { x: x/50, y: y/50 };
+        joyS.style.left = (x+40)+'px'; joyS.style.top = (y+40)+'px';
+        player.dir = { x: x/50, y: y/50 }; 
         if(d > 5) player.lastDir = { x: x/d, y: y/d };
     }
 
-    window.addEventListener('keydown', (e) => {
-        if(e.key === 'w' || e.key === 'ArrowUp') player.dir.y = -1;
-        if(e.key === 's' || e.key === 'ArrowDown') player.dir.y = 1;
-        if(e.key === 'a' || e.key === 'ArrowLeft') player.dir.x = -1;
-        if(e.key === 'd' || e.key === 'ArrowRight') player.dir.x = 1;
-        if(e.key === ' ') useSkill('Normal');
-    });
-    window.addEventListener('keyup', (e) => {
-        if(['w','s','ArrowUp','ArrowDown'].includes(e.key)) player.dir.y = 0;
-        if(['a','d','ArrowLeft','ArrowRight'].includes(e.key)) player.dir.x = 0;
-    });
-
-    /* --- MAIN GAME LOOP --- */
     function gameLoop() {
         player.x += player.dir.x * player.speed; 
         player.y += player.dir.y * player.speed;
         player.x = Math.max(0, Math.min(WORLD_SIZE, player.x)); 
         player.y = Math.max(0, Math.min(WORLD_SIZE, player.y));
-        const heroEl = document.getElementById('hero');
-        heroEl.style.left = player.x+'px';
-        heroEl.style.top = player.y+'px';
+        
+        const h = document.getElementById('hero'); 
+        h.style.left = player.x+'px'; 
+        h.style.top = player.y+'px';
+        
         document.getElementById('map').style.transform = `translate(${window.innerWidth/2 - player.x}px, ${window.innerHeight/2 - player.y}px)`;
-        if(player.dir.x > 0) heroEl.style.transform = `scaleX(1)`;
-        if(player.dir.x < 0) heroEl.style.transform = `scaleX(-1)`;
-
-        document.getElementById('ui-x').innerText = Math.floor(player.x);
-        document.getElementById('ui-y').innerText = Math.floor(player.y);
-        const rp = document.getElementById('radar-p');
-        rp.style.left = (player.x/WORLD_SIZE*100)+'%'; 
-        rp.style.top = (player.y/WORLD_SIZE*100)+'%';
+        
+        if(player.dir.x !== 0) h.style.transform = `scaleX(${player.dir.x > 0 ? 1 : -1})`;
+        
+        const rp = document.getElementById('radar-p'); 
+        if(rp) {
+            rp.style.left = (player.x/WORLD_SIZE*100)+'%'; 
+            rp.style.top = (player.y/WORLD_SIZE*100)+'%';
+        }
 
         requestAnimationFrame(gameLoop);
     }
