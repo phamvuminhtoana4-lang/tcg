@@ -1,331 +1,386 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
+
 <meta charset="UTF-8">
-<title>Kiếm Hiệp RPG</title>
+<title>Open World Kiếm Hiệp</title>
 
 <style>
 
 body{
-background:#111;
-color:white;
+margin:0;
+overflow:hidden;
 font-family:Arial;
-text-align:center;
+background:black;
+}
+
+#ui{
+position:absolute;
+top:10px;
+left:10px;
+color:white;
+background:rgba(0,0,0,0.5);
+padding:10px;
 }
 
 button{
-padding:10px;
-margin:5px;
-background:#333;
-color:white;
-border:none;
-cursor:pointer;
-}
-
-button:hover{
-background:#555;
-}
-
-#game{
-max-width:700px;
-margin:auto;
-}
-
-#log{
-background:black;
-height:200px;
-overflow:auto;
-padding:10px;
-text-align:left;
-}
-
-.stat{
-margin:5px;
+margin:3px;
+padding:8px;
 }
 
 </style>
+
 </head>
 
 <body>
 
-<div id="game">
+<div id="ui">
 
-<h1>⚔ Game Kiếm Hiệp RPG ⚔</h1>
+HP: <span id="hp"></span><br>
+Level: <span id="level"></span><br>
+Gold: <span id="gold"></span><br>
 
-<div id="player"></div>
-
-<div>
-
-<button onclick="farm()">Farm Quái</button>
-<button onclick="dungeon()">Phó Bản</button>
-<button onclick="boss()">Boss</button>
-<button onclick="shop()">Shop</button>
-<button onclick="inventory()">Túi Đồ</button>
+<button onclick="attack()">Attack</button>
+<button onclick="openInventory()">Inventory</button>
+<button onclick="openShop()">Shop</button>
 
 </div>
 
-<h3>Log</h3>
-
-<div id="log"></div>
-
-</div>
+<script src="https://cdn.jsdelivr.net/npm/three@0.158/build/three.min.js"></script>
 
 <script>
 
-////////////////////////////////////////////////////////
-//// PLAYER
-////////////////////////////////////////////////////////
+////////////////////////////////////////////////////
+//// GAME DATA
+////////////////////////////////////////////////////
 
-let player = {
+let stats = {
 
-name:"Hiệp Khách",
+hp:100,
+maxhp:100,
+
 level:1,
 exp:0,
+
 gold:100,
 
-hp:120,
-maxhp:120,
-
-attack:10,
-defense:5,
-
-weapon:null,
-inventory:[],
-kills:0
+atk:10,
+def:5
 
 }
 
-////////////////////////////////////////////////////////
-//// MONSTER
-////////////////////////////////////////////////////////
+////////////////////////////////////////////////////
+//// INVENTORY
+////////////////////////////////////////////////////
 
-let monsters = [
+let inventory=[]
 
-{name:"Thỏ Yêu",hp:50,atk:5},
-{name:"Sói Đen",hp:80,atk:8},
-{name:"Sơn Tặc",hp:120,atk:10},
-{name:"Ma Kiếm",hp:160,atk:14}
+////////////////////////////////////////////////////
+//// ITEMS
+////////////////////////////////////////////////////
 
-]
-
-////////////////////////////////////////////////////////
-//// WEAPONS
-////////////////////////////////////////////////////////
-
-let weapons = [
+let items=[
 
 {name:"Kiếm Gỗ",atk:5},
+
 {name:"Thiết Kiếm",atk:10},
+
 {name:"Long Kiếm",atk:20},
+
 {name:"Thần Kiếm",atk:40}
 
 ]
 
-////////////////////////////////////////////////////////
-//// LOG
-////////////////////////////////////////////////////////
+////////////////////////////////////////////////////
+//// THREE SETUP
+////////////////////////////////////////////////////
 
-function log(text){
+let scene = new THREE.Scene()
 
-let box=document.getElementById("log")
+scene.background=new THREE.Color(0x87ceeb)
 
-box.innerHTML += text+"<br>"
+let camera = new THREE.PerspectiveCamera(
+75,
+window.innerWidth/window.innerHeight,
+0.1,
+1000
+)
 
-box.scrollTop=box.scrollHeight
+let renderer = new THREE.WebGLRenderer()
 
-}
+renderer.setSize(window.innerWidth,window.innerHeight)
 
-////////////////////////////////////////////////////////
-//// UPDATE UI
-////////////////////////////////////////////////////////
+document.body.appendChild(renderer.domElement)
 
-function update(){
+////////////////////////////////////////////////////
+//// LIGHT
+////////////////////////////////////////////////////
 
-document.getElementById("player").innerHTML =
+let light = new THREE.DirectionalLight(0xffffff,1)
 
-"Level: "+player.level+
-" | HP: "+player.hp+"/"+player.maxhp+
-" | Gold: "+player.gold+
-" | ATK: "+player.attack
+light.position.set(20,40,20)
 
-}
+scene.add(light)
 
-////////////////////////////////////////////////////////
-//// LEVEL UP
-////////////////////////////////////////////////////////
+////////////////////////////////////////////////////
+//// MAP GENERATOR
+////////////////////////////////////////////////////
 
-function gainExp(exp){
+let mapSize=200
 
-player.exp += exp
+function generateMap(){
 
-let need = player.level*100
+let geo=new THREE.PlaneGeometry(mapSize,mapSize,50,50)
 
-if(player.exp >= need){
+let mat=new THREE.MeshLambertMaterial({
 
-player.exp=0
-player.level++
-
-player.maxhp +=20
-player.attack +=5
-player.defense +=2
-
-player.hp = player.maxhp
-
-log("🔥 LÊN CẤP "+player.level)
-
-}
-
-}
-
-////////////////////////////////////////////////////////
-//// FARM
-////////////////////////////////////////////////////////
-
-function farm(){
-
-let m = JSON.parse(JSON.stringify(
-
-monsters[Math.floor(Math.random()*monsters.length)]
-
-))
-
-m.hp += player.level*20
-m.atk += player.level*2
-
-battle(m)
-
-}
-
-////////////////////////////////////////////////////////
-//// BATTLE
-////////////////////////////////////////////////////////
-
-function battle(monster){
-
-log("⚔ Gặp "+monster.name)
-
-while(monster.hp>0 && player.hp>0){
-
-monster.hp -= player.attack
-
-log("Bạn đánh "+player.attack)
-
-if(monster.hp<=0) break
-
-let dmg = Math.max(1,monster.atk-player.defense)
-
-player.hp -= dmg
-
-log("Quái đánh "+dmg)
-
-}
-
-if(player.hp<=0){
-
-log("💀 Bạn thua")
-
-player.hp=player.maxhp
-
-return
-
-}
-
-log("🎉 Thắng")
-
-player.gold += 20
-player.kills++
-
-gainExp(30)
-
-drop()
-
-update()
-
-}
-
-////////////////////////////////////////////////////////
-//// DROP ITEM
-////////////////////////////////////////////////////////
-
-function drop(){
-
-if(Math.random()<0.3){
-
-let w=weapons[Math.floor(Math.random()*weapons.length)]
-
-player.inventory.push(w)
-
-log("🗡 Nhặt "+w.name)
-
-}
-
-}
-
-////////////////////////////////////////////////////////
-//// INVENTORY
-////////////////////////////////////////////////////////
-
-function inventory(){
-
-let text="Túi đồ:\n"
-
-player.inventory.forEach((i,index)=>{
-
-text += index+" "+i.name+"\n"
+color:0x228B22,
+wireframe:false
 
 })
 
-let id=prompt(text+"Nhập số để trang bị")
+let ground=new THREE.Mesh(geo,mat)
+
+ground.rotation.x=-Math.PI/2
+
+scene.add(ground)
+
+}
+
+generateMap()
+
+////////////////////////////////////////////////////
+//// PLAYER
+////////////////////////////////////////////////////
+
+let player = new THREE.Mesh(
+
+new THREE.BoxGeometry(1,2,1),
+new THREE.MeshLambertMaterial({color:0x0000ff})
+
+)
+
+player.position.y=1
+
+scene.add(player)
+
+////////////////////////////////////////////////////
+//// CAMERA FOLLOW
+////////////////////////////////////////////////////
+
+camera.position.set(0,6,10)
+
+////////////////////////////////////////////////////
+//// MONSTERS
+////////////////////////////////////////////////////
+
+let monsters=[]
+
+function spawnMonster(){
+
+let m=new THREE.Mesh(
+
+new THREE.BoxGeometry(1,2,1),
+new THREE.MeshLambertMaterial({color:0xff0000})
+
+)
+
+m.position.set(
+
+(Math.random()-0.5)*mapSize,
+1,
+(Math.random()-0.5)*mapSize
+
+)
+
+m.hp=40+stats.level*10
+
+scene.add(m)
+
+monsters.push(m)
+
+}
+
+for(let i=0;i<40;i++){
+
+spawnMonster()
+
+}
+
+////////////////////////////////////////////////////
+//// BOSS
+////////////////////////////////////////////////////
+
+let boss
+
+function spawnBoss(){
+
+boss=new THREE.Mesh(
+
+new THREE.BoxGeometry(3,4,3),
+new THREE.MeshLambertMaterial({color:0x550000})
+
+)
+
+boss.position.set(0,2,-30)
+
+boss.hp=500
+
+scene.add(boss)
+
+}
+
+spawnBoss()
+
+////////////////////////////////////////////////////
+//// ATTACK
+////////////////////////////////////////////////////
+
+function attack(){
+
+monsters.forEach(m=>{
+
+let d=player.position.distanceTo(m.position)
+
+if(d<2){
+
+m.hp-=stats.atk
+
+if(m.hp<=0){
+
+scene.remove(m)
+
+stats.exp+=20
+
+stats.gold+=10
+
+dropItem()
+
+}
+
+}
+
+})
+
+if(boss){
+
+let d=player.position.distanceTo(boss.position)
+
+if(d<4){
+
+boss.hp-=stats.atk
+
+if(boss.hp<=0){
+
+scene.remove(boss)
+
+stats.exp+=200
+
+stats.gold+=200
+
+spawnBoss()
+
+}
+
+}
+
+}
+
+levelUp()
+
+}
+
+////////////////////////////////////////////////////
+//// LEVEL UP
+////////////////////////////////////////////////////
+
+function levelUp(){
+
+let need=stats.level*100
+
+if(stats.exp>=need){
+
+stats.exp=0
+
+stats.level++
+
+stats.maxhp+=20
+
+stats.atk+=5
+
+stats.hp=stats.maxhp
+
+}
+
+}
+
+////////////////////////////////////////////////////
+//// DROP ITEM
+////////////////////////////////////////////////////
+
+function dropItem(){
+
+if(Math.random()<0.3){
+
+let item=items[Math.floor(Math.random()*items.length)]
+
+inventory.push(item)
+
+}
+
+}
+
+////////////////////////////////////////////////////
+//// INVENTORY
+////////////////////////////////////////////////////
+
+function openInventory(){
+
+let text="Inventory\n"
+
+inventory.forEach((i,n)=>{
+
+text+=n+" "+i.name+"\n"
+
+})
+
+let id=prompt(text+"Equip?")
 
 if(id!==null){
 
-let item=player.inventory[id]
-
-equip(item)
+equip(inventory[id])
 
 }
 
 }
-
-////////////////////////////////////////////////////////
-//// EQUIP
-////////////////////////////////////////////////////////
 
 function equip(item){
 
-player.weapon=item.name
-
-player.attack += item.atk
-
-log("Trang bị "+item.name)
-
-update()
+stats.atk+=item.atk
 
 }
 
-////////////////////////////////////////////////////////
+////////////////////////////////////////////////////
 //// SHOP
-////////////////////////////////////////////////////////
+////////////////////////////////////////////////////
 
-function shop(){
+function openShop(){
 
 let c=prompt(
 
-"SHOP\n"+
-"1 Hồi máu (50)\n"+
-"2 Kiếm random (200)"
+"Shop\n"+
+"1 Heal 50\n"+
+"2 Random sword 200"
 
 )
 
 if(c==1){
 
-if(player.gold>=50){
+if(stats.gold>=50){
 
-player.gold-=50
+stats.gold-=50
 
-player.hp=player.maxhp
-
-log("Đã hồi máu")
+stats.hp=stats.maxhp
 
 }
 
@@ -333,65 +388,113 @@ log("Đã hồi máu")
 
 if(c==2){
 
-if(player.gold>=200){
+if(stats.gold>=200){
 
-player.gold-=200
+stats.gold-=200
 
-let w=weapons[Math.floor(Math.random()*weapons.length)]
-
-player.inventory.push(w)
-
-log("Mua "+w.name)
+dropItem()
 
 }
 
 }
 
-update()
+}
+
+////////////////////////////////////////////////////
+//// DAILY UPDATE
+////////////////////////////////////////////////////
+
+function dailyUpdate(){
+
+let today=new Date().getDate()
+
+if(localStorage.day!=today){
+
+localStorage.day=today
+
+mapSize+=20
+
+spawnMonster()
+
+spawnMonster()
 
 }
 
-////////////////////////////////////////////////////////
-//// DUNGEON
-////////////////////////////////////////////////////////
+}
 
-function dungeon(){
+setInterval(dailyUpdate,60000)
 
-log("🔥 Vào phó bản")
+////////////////////////////////////////////////////
+//// MOVEMENT
+////////////////////////////////////////////////////
 
-for(let i=0;i<3;i++){
+let keys={}
 
-farm()
+window.addEventListener("keydown",e=>{
+
+keys[e.key]=true
+
+})
+
+window.addEventListener("keyup",e=>{
+
+keys[e.key]=false
+
+})
+
+////////////////////////////////////////////////////
+//// SAVE
+////////////////////////////////////////////////////
+
+function save(){
+
+localStorage.stats=JSON.stringify(stats)
+
+localStorage.inv=JSON.stringify(inventory)
 
 }
 
-boss()
+function load(){
+
+if(localStorage.stats){
+
+stats=JSON.parse(localStorage.stats)
+
+inventory=JSON.parse(localStorage.inv)
 
 }
 
-////////////////////////////////////////////////////////
-//// BOSS
-////////////////////////////////////////////////////////
+}
 
-function boss(){
+load()
 
-let b={
+////////////////////////////////////////////////////
+//// GAME LOOP
+////////////////////////////////////////////////////
 
-name:"🐉 Ma Vương",
-hp:300+player.level*50,
-atk:20+player.level*5
+function animate(){
+
+requestAnimationFrame(animate)
+
+if(keys["w"]) player.position.z-=0.2
+if(keys["s"]) player.position.z+=0.2
+if(keys["a"]) player.position.x-=0.2
+if(keys["d"]) player.position.x+=0.2
+
+camera.position.x=player.position.x
+camera.position.z=player.position.z+10
+
+camera.lookAt(player.position)
+
+document.getElementById("hp").innerText=stats.hp
+document.getElementById("level").innerText=stats.level
+document.getElementById("gold").innerText=stats.gold
+
+renderer.render(scene,camera)
 
 }
 
-battle(b)
-
-}
-
-////////////////////////////////////////////////////////
-//// START
-////////////////////////////////////////////////////////
-
-update()
+animate()
 
 </script>
 
