@@ -2,11 +2,12 @@
 <html lang="vi">
 <head>
 <meta charset="UTF-8">
-<title>Mobile RPG Full</title>
+<title>RPG Mobile Advanced</title>
 
 <style>
-body{margin:0;overflow:hidden;touch-action:none}
+body{margin:0;overflow:hidden;background:black;font-family:sans-serif}
 
+/* UI */
 #ui{
 position:absolute;
 top:10px;
@@ -15,7 +16,20 @@ color:white;
 z-index:10;
 }
 
-#joystick{
+/* HP BAR */
+.bar{
+width:150px;
+height:10px;
+background:red;
+margin-bottom:5px;
+}
+.fill{
+height:100%;
+background:lime;
+}
+
+/* JOYSTICK */
+#joy{
 position:absolute;
 bottom:40px;
 left:40px;
@@ -24,232 +38,245 @@ height:120px;
 background:rgba(255,255,255,0.1);
 border-radius:50%;
 }
-
 #stick{
 width:60px;
 height:60px;
-background:rgba(255,255,255,0.6);
+background:white;
 border-radius:50%;
 position:absolute;
 left:30px;
 top:30px;
 }
 
-.btn{
+/* BUTTON */
+#atk{
 position:absolute;
-width:70px;
-height:70px;
+bottom:40px;
+right:40px;
+width:70px;height:70px;
+background:red;
 border-radius:50%;
 color:white;
-border:none;
 }
 
-#atk{right:40px;bottom:40px;background:red}
-#skill{right:120px;bottom:120px;background:blue}
+/* MINIMAP */
+#map{
+position:absolute;
+top:10px;
+right:10px;
+width:120px;
+height:120px;
+background:black;
+color:white;
+font-size:10px;
+}
+
 </style>
 </head>
 
 <body>
 
 <div id="ui">
-HP: <span id="hp"></span><br>
-LV: <span id="lv"></span><br>
-Gold: <span id="gold"></span>
+<div>Player HP</div>
+<div class="bar"><div id="hpBar" class="fill"></div></div>
+LV: <span id="lv"></span>
 </div>
 
-<div id="joystick"><div id="stick"></div></div>
+<div id="joy"><div id="stick"></div></div>
+<button id="atk">⚔</button>
 
-<button id="atk" class="btn">⚔</button>
-<button id="skill" class="btn">🔥</button>
+<div id="map"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/three@0.158/build/three.min.js"></script>
 
 <script>
 
-//////////////////////
+//////////////////////////////////////////////////
 // SETUP
-//////////////////////
+//////////////////////////////////////////////////
 
 let scene = new THREE.Scene()
 scene.background = new THREE.Color(0x87ceeb)
 
 let camera = new THREE.PerspectiveCamera(75,innerWidth/innerHeight,0.1,1000)
-let renderer = new THREE.WebGLRenderer({antialias:true})
+let renderer = new THREE.WebGLRenderer()
 renderer.setSize(innerWidth,innerHeight)
 document.body.appendChild(renderer.domElement)
 
-//////////////////////
+//////////////////////////////////////////////////
 // LIGHT
-//////////////////////
+//////////////////////////////////////////////////
 
 let light = new THREE.DirectionalLight(0xffffff,1)
 light.position.set(10,20,10)
 scene.add(light)
 
-//////////////////////
-// MAP
-//////////////////////
+//////////////////////////////////////////////////
+// MAP + OBSTACLES
+//////////////////////////////////////////////////
 
 let ground = new THREE.Mesh(
-new THREE.PlaneGeometry(300,300),
+new THREE.PlaneGeometry(200,200),
 new THREE.MeshLambertMaterial({color:0x228B22})
 )
 ground.rotation.x = -Math.PI/2
 scene.add(ground)
 
-//////////////////////
+// vật cản
+let obstacles = []
+for(let i=0;i<20;i++){
+let o = new THREE.Mesh(
+new THREE.BoxGeometry(3,3,3),
+new THREE.MeshLambertMaterial({color:0x888888})
+)
+o.position.set((Math.random()-0.5)*100,1.5,(Math.random()-0.5)*100)
+scene.add(o)
+obstacles.push(o)
+}
+
+//////////////////////////////////////////////////
 // PLAYER
-//////////////////////
+//////////////////////////////////////////////////
 
 let player = new THREE.Mesh(
 new THREE.BoxGeometry(1,2,1),
-new THREE.MeshLambertMaterial({color:0x0000ff})
+new THREE.MeshLambertMaterial({color:0x00f})
 )
 player.position.y = 1
 scene.add(player)
 
 let data = {
 hp:100,
+maxHp:100,
 lv:1,
-gold:0,
 atk:10
 }
 
-//////////////////////
-// MONSTER
-//////////////////////
+//////////////////////////////////////////////////
+// MOB + HP BAR
+//////////////////////////////////////////////////
 
-let mobs = []
+let mobs=[]
 
 function spawnMob(){
 let m = new THREE.Mesh(
 new THREE.BoxGeometry(1,2,1),
-new THREE.MeshLambertMaterial({color:0xff0000})
+new THREE.MeshLambertMaterial({color:0xf00})
 )
+m.position.set((Math.random()-0.5)*80,1,(Math.random()-0.5)*80)
+m.hp = 50
+m.maxHp = 50
 
-m.position.set((Math.random()-0.5)*100,1,(Math.random()-0.5)*100)
-m.hp = 30
+// hp bar
+let bar = document.createElement("div")
+bar.className="bar"
+bar.style.position="absolute"
+
+let fill = document.createElement("div")
+fill.className="fill"
+bar.appendChild(fill)
+
+document.body.appendChild(bar)
+
+m.bar = bar
+m.fill = fill
 
 scene.add(m)
 mobs.push(m)
 }
 
-for(let i=0;i<20;i++) spawnMob()
+for(let i=0;i<10;i++) spawnMob()
 
-//////////////////////
-// BOSS
-//////////////////////
-
-let boss = new THREE.Mesh(
-new THREE.BoxGeometry(3,4,3),
-new THREE.MeshLambertMaterial({color:0x990000})
-)
-boss.position.set(0,2,-30)
-boss.hp = 300
-scene.add(boss)
-
-//////////////////////
+//////////////////////////////////////////////////
 // JOYSTICK
-//////////////////////
+//////////////////////////////////////////////////
 
-let joy = document.getElementById("joystick")
+let joy = document.getElementById("joy")
 let stick = document.getElementById("stick")
 
-let moveX=0, moveZ=0
-let dragging=false
+let mx=0,mz=0
+let drag=false
 
-joy.addEventListener("touchstart",()=>dragging=true)
+joy.addEventListener("touchstart",()=>drag=true)
 
 joy.addEventListener("touchend",()=>{
-dragging=false
-moveX=0
-moveZ=0
+drag=false
+mx=0;mz=0
 stick.style.left="30px"
 stick.style.top="30px"
 })
 
 joy.addEventListener("touchmove",e=>{
+if(!drag) return
 
-if(!dragging) return
+let r=joy.getBoundingClientRect()
+let x=e.touches[0].clientX-r.left-60
+let y=e.touches[0].clientY-r.top-60
 
-let rect = joy.getBoundingClientRect()
+let d=Math.sqrt(x*x+y*y)
+if(d>40){x=x/d*40;y=y/d*40}
 
-let x = e.touches[0].clientX - rect.left - 60
-let y = e.touches[0].clientY - rect.top - 60
+stick.style.left=(x+30)+"px"
+stick.style.top=(y+30)+"px"
 
-let d = Math.sqrt(x*x+y*y)
-let max = 40
-
-if(d>max){
-x = x/d*max
-y = y/d*max
-}
-
-stick.style.left = (x+30)+"px"
-stick.style.top = (y+30)+"px"
-
-moveX = x/max
-moveZ = y/max
-
+mx=x/40
+mz=y/40
 })
 
-//////////////////////
+//////////////////////////////////////////////////
 // ATTACK
-//////////////////////
+//////////////////////////////////////////////////
 
-document.getElementById("atk").onclick = ()=>{
-
+atk.onclick=()=>{
 mobs.forEach((m,i)=>{
-
-if(player.position.distanceTo(m.position)<3){
-
+let d = player.position.distanceTo(m.position)
+if(d<3){
 m.hp -= data.atk
 
 if(m.hp<=0){
 scene.remove(m)
+m.bar.remove()
 mobs.splice(i,1)
-data.gold += 10
-data.lv++
 spawnMob()
 }
-
-}
-
-})
-
-// boss
-if(player.position.distanceTo(boss.position)<4){
-boss.hp -= data.atk
-}
-
-}
-
-//////////////////////
-// SKILL
-//////////////////////
-
-document.getElementById("skill").onclick = ()=>{
-
-mobs.forEach(m=>{
-if(player.position.distanceTo(m.position)<5){
-m.hp -= 20
 }
 })
-
 }
 
-//////////////////////
+//////////////////////////////////////////////////
+// COLLISION (NÚP SAU VẬT)
+//////////////////////////////////////////////////
+
+function checkCollision(newX,newZ){
+
+for(let o of obstacles){
+let d = Math.hypot(o.position.x-newX,o.position.z-newZ)
+if(d<3) return true
+}
+
+return false
+}
+
+//////////////////////////////////////////////////
 // AI
-//////////////////////
+//////////////////////////////////////////////////
 
 function mobAI(){
 
 mobs.forEach(m=>{
+
 let d = player.position.distanceTo(m.position)
 
 if(d<20){
-m.position.x += (player.position.x - m.position.x)*0.01
-m.position.z += (player.position.z - m.position.z)*0.01
+
+let nx = m.position.x + (player.position.x - m.position.x)*0.01
+let nz = m.position.z + (player.position.z - m.position.z)*0.01
+
+if(!checkCollision(nx,nz)){
+m.position.x = nx
+m.position.z = nz
+}
+
 }
 
 if(d<2){
@@ -260,24 +287,24 @@ data.hp -= 0.1
 
 }
 
-function bossAI(){
+//////////////////////////////////////////////////
+// MINIMAP
+//////////////////////////////////////////////////
 
-let d = player.position.distanceTo(boss.position)
+function updateMap(){
 
-if(d<30){
-boss.position.x += (player.position.x - boss.position.x)*0.01
-boss.position.z += (player.position.z - boss.position.z)*0.01
+let map = document.getElementById("map")
+
+map.innerHTML =
+"X:"+Math.floor(player.position.x)+"<br>"+
+"Z:"+Math.floor(player.position.z)+"<br>"+
+"Mobs:"+mobs.length
+
 }
 
-if(d<3){
-data.hp -= 0.5
-}
-
-}
-
-//////////////////////
-// GAME LOOP
-//////////////////////
+//////////////////////////////////////////////////
+// LOOP
+//////////////////////////////////////////////////
 
 camera.position.set(0,6,10)
 
@@ -285,23 +312,45 @@ function loop(){
 
 requestAnimationFrame(loop)
 
-// MOVE
-player.position.x += moveX * 0.25
-player.position.z += moveZ * 0.25
+// move + collision
+let nx = player.position.x + mx*0.3
+let nz = player.position.z + mz*0.3
 
-// CAMERA
+if(!checkCollision(nx,nz)){
+player.position.x = nx
+player.position.z = nz
+}
+
+// camera
 camera.position.x = player.position.x
-camera.position.z = player.position.z + 10
+camera.position.z = player.position.z+10
 camera.lookAt(player.position)
 
 // AI
 mobAI()
-bossAI()
 
-// UI
-document.getElementById("hp").innerText = Math.floor(data.hp)
-document.getElementById("lv").innerText = data.lv
-document.getElementById("gold").innerText = data.gold
+// player HP bar
+document.getElementById("hpBar").style.width =
+(data.hp/data.maxHp*100)+"%"
+
+// mob HP bar
+mobs.forEach(m=>{
+
+let pos = m.position.clone()
+pos.project(camera)
+
+let x = (pos.x*0.5+0.5)*innerWidth
+let y = (-pos.y*0.5+0.5)*innerHeight
+
+m.bar.style.left = x+"px"
+m.bar.style.top = y+"px"
+
+m.fill.style.width = (m.hp/m.maxHp*100)+"%"
+
+})
+
+// map
+updateMap()
 
 renderer.render(scene,camera)
 
@@ -310,6 +359,5 @@ renderer.render(scene,camera)
 loop()
 
 </script>
-
 </body>
 </html>
