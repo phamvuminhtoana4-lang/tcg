@@ -1,9 +1,8 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-
 <meta charset="UTF-8">
-<title>Mobile Open World RPG</title>
+<title>OPEN WORLD MOBILE RPG</title>
 
 <style>
 
@@ -11,8 +10,10 @@ body{
 margin:0;
 overflow:hidden;
 touch-action:none;
+font-family:Arial;
 }
 
+/* UI */
 #ui{
 position:absolute;
 top:10px;
@@ -21,16 +22,16 @@ color:white;
 z-index:10;
 }
 
+/* JOYSTICK */
 #joystick{
 position:absolute;
-bottom:50px;
-left:50px;
+bottom:40px;
+left:40px;
 width:120px;
 height:120px;
 background:rgba(255,255,255,0.1);
 border-radius:50%;
 }
-
 #stick{
 width:60px;
 height:60px;
@@ -41,224 +42,283 @@ left:30px;
 top:30px;
 }
 
-#attackBtn{
+/* BUTTONS */
+.btn{
 position:absolute;
-bottom:60px;
-right:60px;
-width:80px;
-height:80px;
-background:red;
+width:70px;
+height:70px;
 border-radius:50%;
 color:white;
-font-size:20px;
+font-size:18px;
+border:none;
+}
+
+#atk{bottom:50px;right:50px;background:red;}
+#skill1{bottom:140px;right:50px;background:blue;}
+#skill2{bottom:230px;right:50px;background:purple;}
+
+/* INVENTORY */
+#inv{
+position:absolute;
+top:50px;
+right:10px;
+background:rgba(0,0,0,0.7);
+padding:10px;
+display:none;
+color:white;
+}
+
+/* MINIMAP */
+#map{
+position:absolute;
+top:10px;
+right:10px;
+width:120px;
+height:120px;
+background:black;
+color:white;
+font-size:10px;
 }
 
 </style>
-
 </head>
 
 <body>
 
 <div id="ui">
 HP: <span id="hp"></span><br>
-Level: <span id="level"></span>
+Level: <span id="lv"></span><br>
+EXP: <span id="exp"></span><br>
+Gold: <span id="gold"></span>
 </div>
 
-<div id="joystick">
-<div id="stick"></div>
-</div>
+<div id="joystick"><div id="stick"></div></div>
 
-<button id="attackBtn">⚔</button>
+<button id="atk" class="btn">⚔</button>
+<button id="skill1" class="btn">🔥</button>
+<button id="skill2" class="btn">❄</button>
+
+<div id="inv"></div>
+<div id="map"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/three@0.158/build/three.min.js"></script>
 
 <script>
 
-////////////////////////////////////////////////////
-// THREE SETUP
-////////////////////////////////////////////////////
+/////////////////////////////
+// SETUP
+/////////////////////////////
 
 let scene = new THREE.Scene()
 scene.background = new THREE.Color(0x87ceeb)
 
-let camera = new THREE.PerspectiveCamera(
-75, window.innerWidth/window.innerHeight, 0.1, 1000
-)
-
+let camera = new THREE.PerspectiveCamera(75,innerWidth/innerHeight,0.1,1000)
 let renderer = new THREE.WebGLRenderer()
-renderer.setSize(window.innerWidth,window.innerHeight)
+renderer.setSize(innerWidth,innerHeight)
 document.body.appendChild(renderer.domElement)
 
-////////////////////////////////////////////////////
+/////////////////////////////
 // LIGHT
-////////////////////////////////////////////////////
+/////////////////////////////
 
 let light = new THREE.DirectionalLight(0xffffff,1)
 light.position.set(10,20,10)
 scene.add(light)
 
-////////////////////////////////////////////////////
+/////////////////////////////
 // MAP
-////////////////////////////////////////////////////
+/////////////////////////////
 
 let ground = new THREE.Mesh(
-new THREE.PlaneGeometry(300,300),
+new THREE.PlaneGeometry(500,500),
 new THREE.MeshLambertMaterial({color:0x228B22})
 )
-ground.rotation.x = -Math.PI/2
+ground.rotation.x=-Math.PI/2
 scene.add(ground)
 
-////////////////////////////////////////////////////
+/////////////////////////////
 // PLAYER
-////////////////////////////////////////////////////
+/////////////////////////////
 
 let player = new THREE.Mesh(
 new THREE.BoxGeometry(1,2,1),
 new THREE.MeshLambertMaterial({color:0x0000ff})
 )
-player.position.y = 1
+player.position.y=1
 scene.add(player)
 
-////////////////////////////////////////////////////
-// STATS
-////////////////////////////////////////////////////
+/////////////////////////////
+// DATA
+/////////////////////////////
 
-let stats = {
+let data={
 hp:100,
-level:1,
-atk:10
+lv:1,
+exp:0,
+gold:0,
+atk:10,
+inventory:[]
 }
 
-////////////////////////////////////////////////////
-// MONSTERS
-////////////////////////////////////////////////////
+/////////////////////////////
+// MONSTER
+/////////////////////////////
 
-let monsters = []
+let mobs=[]
 
-function spawnMonster(){
-
-let m = new THREE.Mesh(
+function spawnMob(){
+let m=new THREE.Mesh(
 new THREE.BoxGeometry(1,2,1),
 new THREE.MeshLambertMaterial({color:0xff0000})
 )
-
-m.position.set(
-(Math.random()-0.5)*100,
-1,
-(Math.random()-0.5)*100
-)
-
-m.hp = 30
-
+m.position.set((Math.random()-0.5)*200,1,(Math.random()-0.5)*200)
+m.hp=30
 scene.add(m)
-monsters.push(m)
-
+mobs.push(m)
 }
 
-for(let i=0;i<20;i++) spawnMonster()
+for(let i=0;i<50;i++)spawnMob()
 
-////////////////////////////////////////////////////
+/////////////////////////////
 // JOYSTICK
-////////////////////////////////////////////////////
+/////////////////////////////
 
-let joystick = document.getElementById("joystick")
-let stick = document.getElementById("stick")
+let joy=document.getElementById("joystick")
+let stick=document.getElementById("stick")
 
-let moveX = 0
-let moveZ = 0
+let mx=0,mz=0
 
-joystick.addEventListener("touchmove", e => {
-
-let rect = joystick.getBoundingClientRect()
-
-let x = e.touches[0].clientX - rect.left - 60
-let y = e.touches[0].clientY - rect.top - 60
-
-let dist = Math.sqrt(x*x + y*y)
-let max = 40
-
-if(dist > max){
-x = x/dist*max
-y = y/dist*max
-}
-
-stick.style.left = (x+30) + "px"
-stick.style.top = (y+30) + "px"
-
-moveX = x/40
-moveZ = y/40
-
+joy.addEventListener("touchmove",e=>{
+let r=joy.getBoundingClientRect()
+let x=e.touches[0].clientX-r.left-60
+let y=e.touches[0].clientY-r.top-60
+let d=Math.sqrt(x*x+y*y)
+if(d>40){x=x/d*40;y=y/d*40}
+stick.style.left=(x+30)+"px"
+stick.style.top=(y+30)+"px"
+mx=x/40
+mz=y/40
 })
 
-joystick.addEventListener("touchend", () => {
-
-stick.style.left = "30px"
-stick.style.top = "30px"
-
-moveX = 0
-moveZ = 0
-
+joy.addEventListener("touchend",()=>{
+mx=0;mz=0
+stick.style.left="30px"
+stick.style.top="30px"
 })
 
-////////////////////////////////////////////////////
-// ATTACK BUTTON
-////////////////////////////////////////////////////
+/////////////////////////////
+// ATTACK
+/////////////////////////////
 
-document.getElementById("attackBtn").onclick = () => {
-
-monsters.forEach(m => {
-
-let d = player.position.distanceTo(m.position)
-
-if(d < 3){
-
-m.hp -= stats.atk
-
-if(m.hp <= 0){
-
+document.getElementById("atk").onclick=()=>{
+mobs.forEach(m=>{
+let d=player.position.distanceTo(m.position)
+if(d<3){
+m.hp-=data.atk
+if(m.hp<=0){
 scene.remove(m)
-stats.level++
-
-spawnMonster()
-
+data.exp+=10
+data.gold+=5
+data.inventory.push("item")
+spawnMob()
+}
+}
+})
 }
 
+/////////////////////////////
+// SKILLS
+/////////////////////////////
+
+document.getElementById("skill1").onclick=()=>{
+mobs.forEach(m=>{
+let d=player.position.distanceTo(m.position)
+if(d<5) m.hp-=20
+})
 }
 
+document.getElementById("skill2").onclick=()=>{
+mobs.forEach(m=>{
+let d=player.position.distanceTo(m.position)
+if(d<5) m.position.x+=2
+})
+}
+
+/////////////////////////////
+// LEVEL UP
+/////////////////////////////
+
+function levelUp(){
+if(data.exp>=data.lv*50){
+data.exp=0
+data.lv++
+data.hp+=20
+data.atk+=5
+}
+}
+
+/////////////////////////////
+// SAVE SYSTEM
+/////////////////////////////
+
+function save(){
+localStorage.setItem("game",JSON.stringify(data))
+}
+
+function load(){
+let s=localStorage.getItem("game")
+if(s) data=JSON.parse(s)
+}
+
+load()
+
+/////////////////////////////
+// INVENTORY UI
+/////////////////////////////
+
+document.addEventListener("dblclick",()=>{
+let inv=document.getElementById("inv")
+inv.style.display=inv.style.display=="none"?"block":"none"
+inv.innerHTML=data.inventory.join("<br>")
 })
 
-}
-
-////////////////////////////////////////////////////
+/////////////////////////////
 // GAME LOOP
-////////////////////////////////////////////////////
+/////////////////////////////
 
 camera.position.set(0,6,10)
 
-function animate(){
+function loop(){
 
-requestAnimationFrame(animate)
+requestAnimationFrame(loop)
 
-// MOVE bằng joystick
-player.position.x += moveX * 0.2
-player.position.z += moveZ * 0.2
+// move
+player.position.x+=mx*0.3
+player.position.z+=mz*0.3
 
-// CAMERA FOLLOW
-camera.position.x = player.position.x
-camera.position.z = player.position.z + 10
+// camera
+camera.position.x=player.position.x
+camera.position.z=player.position.z+10
 camera.lookAt(player.position)
 
+// level up
+levelUp()
+
 // UI
-document.getElementById("hp").innerText = stats.hp
-document.getElementById("level").innerText = stats.level
+document.getElementById("hp").innerText=data.hp
+document.getElementById("lv").innerText=data.lv
+document.getElementById("exp").innerText=data.exp
+document.getElementById("gold").innerText=data.gold
+
+// save auto
+save()
 
 renderer.render(scene,camera)
 
 }
 
-animate()
+loop()
 
 </script>
-
 </body>
 </html>
