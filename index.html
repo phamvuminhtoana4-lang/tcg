@@ -2,18 +2,11 @@
 <html lang="vi">
 <head>
 <meta charset="UTF-8">
-<title>OPEN WORLD MOBILE RPG</title>
+<title>Mobile RPG Full</title>
 
 <style>
+body{margin:0;overflow:hidden;touch-action:none}
 
-body{
-margin:0;
-overflow:hidden;
-touch-action:none;
-font-family:Arial;
-}
-
-/* UI */
 #ui{
 position:absolute;
 top:10px;
@@ -22,7 +15,6 @@ color:white;
 z-index:10;
 }
 
-/* JOYSTICK */
 #joystick{
 position:absolute;
 bottom:40px;
@@ -32,54 +24,28 @@ height:120px;
 background:rgba(255,255,255,0.1);
 border-radius:50%;
 }
+
 #stick{
 width:60px;
 height:60px;
-background:rgba(255,255,255,0.5);
+background:rgba(255,255,255,0.6);
 border-radius:50%;
 position:absolute;
 left:30px;
 top:30px;
 }
 
-/* BUTTONS */
 .btn{
 position:absolute;
 width:70px;
 height:70px;
 border-radius:50%;
 color:white;
-font-size:18px;
 border:none;
 }
 
-#atk{bottom:50px;right:50px;background:red;}
-#skill1{bottom:140px;right:50px;background:blue;}
-#skill2{bottom:230px;right:50px;background:purple;}
-
-/* INVENTORY */
-#inv{
-position:absolute;
-top:50px;
-right:10px;
-background:rgba(0,0,0,0.7);
-padding:10px;
-display:none;
-color:white;
-}
-
-/* MINIMAP */
-#map{
-position:absolute;
-top:10px;
-right:10px;
-width:120px;
-height:120px;
-background:black;
-color:white;
-font-size:10px;
-}
-
+#atk{right:40px;bottom:40px;background:red}
+#skill{right:120px;bottom:120px;background:blue}
 </style>
 </head>
 
@@ -87,204 +53,231 @@ font-size:10px;
 
 <div id="ui">
 HP: <span id="hp"></span><br>
-Level: <span id="lv"></span><br>
-EXP: <span id="exp"></span><br>
+LV: <span id="lv"></span><br>
 Gold: <span id="gold"></span>
 </div>
 
 <div id="joystick"><div id="stick"></div></div>
 
 <button id="atk" class="btn">⚔</button>
-<button id="skill1" class="btn">🔥</button>
-<button id="skill2" class="btn">❄</button>
-
-<div id="inv"></div>
-<div id="map"></div>
+<button id="skill" class="btn">🔥</button>
 
 <script src="https://cdn.jsdelivr.net/npm/three@0.158/build/three.min.js"></script>
 
 <script>
 
-/////////////////////////////
+//////////////////////
 // SETUP
-/////////////////////////////
+//////////////////////
 
 let scene = new THREE.Scene()
 scene.background = new THREE.Color(0x87ceeb)
 
 let camera = new THREE.PerspectiveCamera(75,innerWidth/innerHeight,0.1,1000)
-let renderer = new THREE.WebGLRenderer()
+let renderer = new THREE.WebGLRenderer({antialias:true})
 renderer.setSize(innerWidth,innerHeight)
 document.body.appendChild(renderer.domElement)
 
-/////////////////////////////
+//////////////////////
 // LIGHT
-/////////////////////////////
+//////////////////////
 
 let light = new THREE.DirectionalLight(0xffffff,1)
 light.position.set(10,20,10)
 scene.add(light)
 
-/////////////////////////////
+//////////////////////
 // MAP
-/////////////////////////////
+//////////////////////
 
 let ground = new THREE.Mesh(
-new THREE.PlaneGeometry(500,500),
+new THREE.PlaneGeometry(300,300),
 new THREE.MeshLambertMaterial({color:0x228B22})
 )
-ground.rotation.x=-Math.PI/2
+ground.rotation.x = -Math.PI/2
 scene.add(ground)
 
-/////////////////////////////
+//////////////////////
 // PLAYER
-/////////////////////////////
+//////////////////////
 
 let player = new THREE.Mesh(
 new THREE.BoxGeometry(1,2,1),
 new THREE.MeshLambertMaterial({color:0x0000ff})
 )
-player.position.y=1
+player.position.y = 1
 scene.add(player)
 
-/////////////////////////////
-// DATA
-/////////////////////////////
-
-let data={
+let data = {
 hp:100,
 lv:1,
-exp:0,
 gold:0,
-atk:10,
-inventory:[]
+atk:10
 }
 
-/////////////////////////////
+//////////////////////
 // MONSTER
-/////////////////////////////
+//////////////////////
 
-let mobs=[]
+let mobs = []
 
 function spawnMob(){
-let m=new THREE.Mesh(
+let m = new THREE.Mesh(
 new THREE.BoxGeometry(1,2,1),
 new THREE.MeshLambertMaterial({color:0xff0000})
 )
-m.position.set((Math.random()-0.5)*200,1,(Math.random()-0.5)*200)
-m.hp=30
+
+m.position.set((Math.random()-0.5)*100,1,(Math.random()-0.5)*100)
+m.hp = 30
+
 scene.add(m)
 mobs.push(m)
 }
 
-for(let i=0;i<50;i++)spawnMob()
+for(let i=0;i<20;i++) spawnMob()
 
-/////////////////////////////
+//////////////////////
+// BOSS
+//////////////////////
+
+let boss = new THREE.Mesh(
+new THREE.BoxGeometry(3,4,3),
+new THREE.MeshLambertMaterial({color:0x990000})
+)
+boss.position.set(0,2,-30)
+boss.hp = 300
+scene.add(boss)
+
+//////////////////////
 // JOYSTICK
-/////////////////////////////
+//////////////////////
 
-let joy=document.getElementById("joystick")
-let stick=document.getElementById("stick")
+let joy = document.getElementById("joystick")
+let stick = document.getElementById("stick")
 
-let mx=0,mz=0
+let moveX=0, moveZ=0
+let dragging=false
 
-joy.addEventListener("touchmove",e=>{
-let r=joy.getBoundingClientRect()
-let x=e.touches[0].clientX-r.left-60
-let y=e.touches[0].clientY-r.top-60
-let d=Math.sqrt(x*x+y*y)
-if(d>40){x=x/d*40;y=y/d*40}
-stick.style.left=(x+30)+"px"
-stick.style.top=(y+30)+"px"
-mx=x/40
-mz=y/40
-})
+joy.addEventListener("touchstart",()=>dragging=true)
 
 joy.addEventListener("touchend",()=>{
-mx=0;mz=0
+dragging=false
+moveX=0
+moveZ=0
 stick.style.left="30px"
 stick.style.top="30px"
 })
 
-/////////////////////////////
-// ATTACK
-/////////////////////////////
+joy.addEventListener("touchmove",e=>{
 
-document.getElementById("atk").onclick=()=>{
-mobs.forEach(m=>{
-let d=player.position.distanceTo(m.position)
-if(d<3){
-m.hp-=data.atk
+if(!dragging) return
+
+let rect = joy.getBoundingClientRect()
+
+let x = e.touches[0].clientX - rect.left - 60
+let y = e.touches[0].clientY - rect.top - 60
+
+let d = Math.sqrt(x*x+y*y)
+let max = 40
+
+if(d>max){
+x = x/d*max
+y = y/d*max
+}
+
+stick.style.left = (x+30)+"px"
+stick.style.top = (y+30)+"px"
+
+moveX = x/max
+moveZ = y/max
+
+})
+
+//////////////////////
+// ATTACK
+//////////////////////
+
+document.getElementById("atk").onclick = ()=>{
+
+mobs.forEach((m,i)=>{
+
+if(player.position.distanceTo(m.position)<3){
+
+m.hp -= data.atk
+
 if(m.hp<=0){
 scene.remove(m)
-data.exp+=10
-data.gold+=5
-data.inventory.push("item")
+mobs.splice(i,1)
+data.gold += 10
+data.lv++
 spawnMob()
 }
+
 }
+
 })
+
+// boss
+if(player.position.distanceTo(boss.position)<4){
+boss.hp -= data.atk
 }
 
-/////////////////////////////
-// SKILLS
-/////////////////////////////
+}
 
-document.getElementById("skill1").onclick=()=>{
+//////////////////////
+// SKILL
+//////////////////////
+
+document.getElementById("skill").onclick = ()=>{
+
 mobs.forEach(m=>{
-let d=player.position.distanceTo(m.position)
-if(d<5) m.hp-=20
+if(player.position.distanceTo(m.position)<5){
+m.hp -= 20
+}
 })
+
 }
 
-document.getElementById("skill2").onclick=()=>{
+//////////////////////
+// AI
+//////////////////////
+
+function mobAI(){
+
 mobs.forEach(m=>{
-let d=player.position.distanceTo(m.position)
-if(d<5) m.position.x+=2
-})
+let d = player.position.distanceTo(m.position)
+
+if(d<20){
+m.position.x += (player.position.x - m.position.x)*0.01
+m.position.z += (player.position.z - m.position.z)*0.01
 }
 
-/////////////////////////////
-// LEVEL UP
-/////////////////////////////
-
-function levelUp(){
-if(data.exp>=data.lv*50){
-data.exp=0
-data.lv++
-data.hp+=20
-data.atk+=5
-}
+if(d<2){
+data.hp -= 0.1
 }
 
-/////////////////////////////
-// SAVE SYSTEM
-/////////////////////////////
-
-function save(){
-localStorage.setItem("game",JSON.stringify(data))
-}
-
-function load(){
-let s=localStorage.getItem("game")
-if(s) data=JSON.parse(s)
-}
-
-load()
-
-/////////////////////////////
-// INVENTORY UI
-/////////////////////////////
-
-document.addEventListener("dblclick",()=>{
-let inv=document.getElementById("inv")
-inv.style.display=inv.style.display=="none"?"block":"none"
-inv.innerHTML=data.inventory.join("<br>")
 })
 
-/////////////////////////////
+}
+
+function bossAI(){
+
+let d = player.position.distanceTo(boss.position)
+
+if(d<30){
+boss.position.x += (player.position.x - boss.position.x)*0.01
+boss.position.z += (player.position.z - boss.position.z)*0.01
+}
+
+if(d<3){
+data.hp -= 0.5
+}
+
+}
+
+//////////////////////
 // GAME LOOP
-/////////////////////////////
+//////////////////////
 
 camera.position.set(0,6,10)
 
@@ -292,26 +285,23 @@ function loop(){
 
 requestAnimationFrame(loop)
 
-// move
-player.position.x+=mx*0.3
-player.position.z+=mz*0.3
+// MOVE
+player.position.x += moveX * 0.25
+player.position.z += moveZ * 0.25
 
-// camera
-camera.position.x=player.position.x
-camera.position.z=player.position.z+10
+// CAMERA
+camera.position.x = player.position.x
+camera.position.z = player.position.z + 10
 camera.lookAt(player.position)
 
-// level up
-levelUp()
+// AI
+mobAI()
+bossAI()
 
 // UI
-document.getElementById("hp").innerText=data.hp
-document.getElementById("lv").innerText=data.lv
-document.getElementById("exp").innerText=data.exp
-document.getElementById("gold").innerText=data.gold
-
-// save auto
-save()
+document.getElementById("hp").innerText = Math.floor(data.hp)
+document.getElementById("lv").innerText = data.lv
+document.getElementById("gold").innerText = data.gold
 
 renderer.render(scene,camera)
 
@@ -320,5 +310,6 @@ renderer.render(scene,camera)
 loop()
 
 </script>
+
 </body>
 </html>
