@@ -2,73 +2,45 @@
 <html lang="vi">
 <head>
 <meta charset="UTF-8">
-<title>RPG Mobile Advanced</title>
+<title>Game Open World Mini</title>
 
 <style>
 body{margin:0;overflow:hidden;background:black;font-family:sans-serif}
 
 /* UI */
 #ui{
-position:absolute;
-top:10px;
-left:10px;
-color:white;
-z-index:10;
+position:absolute;top:10px;left:10px;color:white;z-index:10
 }
 
-/* HP BAR */
-.bar{
-width:150px;
-height:10px;
-background:red;
-margin-bottom:5px;
-}
-.fill{
-height:100%;
-background:lime;
-}
+.bar{width:160px;height:12px;background:red}
+.fill{height:100%;background:lime}
 
-/* JOYSTICK */
+/* joystick */
 #joy{
-position:absolute;
-bottom:40px;
-left:40px;
-width:120px;
-height:120px;
+position:absolute;bottom:40px;left:40px;
+width:120px;height:120px;
 background:rgba(255,255,255,0.1);
 border-radius:50%;
 }
 #stick{
-width:60px;
-height:60px;
-background:white;
-border-radius:50%;
-position:absolute;
-left:30px;
-top:30px;
+width:60px;height:60px;background:white;border-radius:50%;
+position:absolute;left:30px;top:30px;
 }
 
-/* BUTTON */
+/* btn */
 #atk{
-position:absolute;
-bottom:40px;
-right:40px;
-width:70px;height:70px;
-background:red;
-border-radius:50%;
-color:white;
+position:absolute;right:40px;bottom:40px;
+width:70px;height:70px;background:red;color:white;border-radius:50%
+}
+#use{
+position:absolute;right:120px;bottom:120px;
+width:70px;height:70px;background:orange;border-radius:50%
 }
 
-/* MINIMAP */
+/* map */
 #map{
-position:absolute;
-top:10px;
-right:10px;
-width:120px;
-height:120px;
-background:black;
-color:white;
-font-size:10px;
+position:absolute;top:10px;right:10px;
+width:120px;height:120px;background:black;color:white;font-size:10px
 }
 
 </style>
@@ -77,13 +49,15 @@ font-size:10px;
 <body>
 
 <div id="ui">
-<div>Player HP</div>
+HP
 <div class="bar"><div id="hpBar" class="fill"></div></div>
 LV: <span id="lv"></span>
+Gold: <span id="gold"></span>
 </div>
 
 <div id="joy"><div id="stick"></div></div>
 <button id="atk">⚔</button>
+<button id="use">🚗</button>
 
 <div id="map"></div>
 
@@ -91,269 +65,230 @@ LV: <span id="lv"></span>
 
 <script>
 
-//////////////////////////////////////////////////
-// SETUP
-//////////////////////////////////////////////////
+////////////////////////////
+// SETUP + AUTO FIT
+////////////////////////////
 
 let scene = new THREE.Scene()
-scene.background = new THREE.Color(0x87ceeb)
-
 let camera = new THREE.PerspectiveCamera(75,innerWidth/innerHeight,0.1,1000)
 let renderer = new THREE.WebGLRenderer()
 renderer.setSize(innerWidth,innerHeight)
 document.body.appendChild(renderer.domElement)
 
-//////////////////////////////////////////////////
-// LIGHT
-//////////////////////////////////////////////////
+window.addEventListener("resize",()=>{
+camera.aspect = innerWidth/innerHeight
+camera.updateProjectionMatrix()
+renderer.setSize(innerWidth,innerHeight)
+})
 
 let light = new THREE.DirectionalLight(0xffffff,1)
 light.position.set(10,20,10)
 scene.add(light)
 
-//////////////////////////////////////////////////
-// MAP + OBSTACLES
-//////////////////////////////////////////////////
+////////////////////////////
+// MAP
+////////////////////////////
 
 let ground = new THREE.Mesh(
-new THREE.PlaneGeometry(200,200),
+new THREE.PlaneGeometry(300,300),
 new THREE.MeshLambertMaterial({color:0x228B22})
 )
-ground.rotation.x = -Math.PI/2
+ground.rotation.x=-Math.PI/2
 scene.add(ground)
 
-// vật cản
-let obstacles = []
-for(let i=0;i<20;i++){
-let o = new THREE.Mesh(
-new THREE.BoxGeometry(3,3,3),
-new THREE.MeshLambertMaterial({color:0x888888})
-)
-o.position.set((Math.random()-0.5)*100,1.5,(Math.random()-0.5)*100)
-scene.add(o)
-obstacles.push(o)
-}
-
-//////////////////////////////////////////////////
+////////////////////////////
 // PLAYER
-//////////////////////////////////////////////////
+////////////////////////////
 
 let player = new THREE.Mesh(
 new THREE.BoxGeometry(1,2,1),
 new THREE.MeshLambertMaterial({color:0x00f})
 )
-player.position.y = 1
+player.position.y=1
 scene.add(player)
 
-let data = {
-hp:100,
-maxHp:100,
-lv:1,
-atk:10
-}
+let data = {hp:100,maxHp:100,lv:1,gold:0,atk:10,dead:false,inCar:false}
 
-//////////////////////////////////////////////////
-// MOB + HP BAR
-//////////////////////////////////////////////////
+////////////////////////////
+// HOUSE
+////////////////////////////
+
+let house = new THREE.Mesh(
+new THREE.BoxGeometry(6,4,6),
+new THREE.MeshLambertMaterial({color:0x8B4513})
+)
+house.position.set(10,2,10)
+scene.add(house)
+
+////////////////////////////
+// CAR
+////////////////////////////
+
+let car = new THREE.Mesh(
+new THREE.BoxGeometry(2,1,4),
+new THREE.MeshLambertMaterial({color:0xffff00})
+)
+car.position.set(-10,0.5,10)
+scene.add(car)
+
+////////////////////////////
+// ITEMS
+////////////////////////////
+
+let items=[]
+function spawnItem(){
+let i = new THREE.Mesh(
+new THREE.SphereGeometry(0.5),
+new THREE.MeshLambertMaterial({color:0x00ff00})
+)
+i.position.set((Math.random()-0.5)*100,1,(Math.random()-0.5)*100)
+i.type = Math.random()>0.5?"hp":"gold"
+scene.add(i)
+items.push(i)
+}
+for(let i=0;i<10;i++) spawnItem()
+
+////////////////////////////
+// MOB
+////////////////////////////
 
 let mobs=[]
-
 function spawnMob(){
 let m = new THREE.Mesh(
 new THREE.BoxGeometry(1,2,1),
 new THREE.MeshLambertMaterial({color:0xf00})
 )
-m.position.set((Math.random()-0.5)*80,1,(Math.random()-0.5)*80)
-m.hp = 50
-m.maxHp = 50
-
-// hp bar
-let bar = document.createElement("div")
-bar.className="bar"
-bar.style.position="absolute"
-
-let fill = document.createElement("div")
-fill.className="fill"
-bar.appendChild(fill)
-
-document.body.appendChild(bar)
-
-m.bar = bar
-m.fill = fill
-
+m.position.set((Math.random()-0.5)*100,1,(Math.random()-0.5)*100)
+m.hp=40
 scene.add(m)
 mobs.push(m)
 }
+for(let i=0;i<8;i++) spawnMob()
 
-for(let i=0;i<10;i++) spawnMob()
-
-//////////////////////////////////////////////////
+////////////////////////////
 // JOYSTICK
-//////////////////////////////////////////////////
+////////////////////////////
 
-let joy = document.getElementById("joy")
-let stick = document.getElementById("stick")
+let mx=0,mz=0,drag=false
+joy.ontouchstart=()=>drag=true
+joy.ontouchend=()=>{drag=false;mx=0;mz=0;stick.style.left="30px";stick.style.top="30px"}
 
-let mx=0,mz=0
-let drag=false
-
-joy.addEventListener("touchstart",()=>drag=true)
-
-joy.addEventListener("touchend",()=>{
-drag=false
-mx=0;mz=0
-stick.style.left="30px"
-stick.style.top="30px"
-})
-
-joy.addEventListener("touchmove",e=>{
-if(!drag) return
-
+joy.ontouchmove=e=>{
+if(!drag)return
 let r=joy.getBoundingClientRect()
 let x=e.touches[0].clientX-r.left-60
 let y=e.touches[0].clientY-r.top-60
-
 let d=Math.sqrt(x*x+y*y)
 if(d>40){x=x/d*40;y=y/d*40}
-
 stick.style.left=(x+30)+"px"
 stick.style.top=(y+30)+"px"
-
 mx=x/40
 mz=y/40
-})
+}
 
-//////////////////////////////////////////////////
+////////////////////////////
 // ATTACK
-//////////////////////////////////////////////////
+////////////////////////////
 
 atk.onclick=()=>{
 mobs.forEach((m,i)=>{
-let d = player.position.distanceTo(m.position)
-if(d<3){
-m.hp -= data.atk
-
+if(player.position.distanceTo(m.position)<3){
+m.hp-=data.atk
 if(m.hp<=0){
 scene.remove(m)
-m.bar.remove()
 mobs.splice(i,1)
+data.gold+=10
 spawnMob()
 }
 }
 })
 }
 
-//////////////////////////////////////////////////
-// COLLISION (NÚP SAU VẬT)
-//////////////////////////////////////////////////
+////////////////////////////
+// USE (XE)
+////////////////////////////
 
-function checkCollision(newX,newZ){
-
-for(let o of obstacles){
-let d = Math.hypot(o.position.x-newX,o.position.z-newZ)
-if(d<3) return true
+use.onclick=()=>{
+if(player.position.distanceTo(car.position)<3){
+data.inCar=!data.inCar
+}
 }
 
-return false
-}
-
-//////////////////////////////////////////////////
+////////////////////////////
 // AI
-//////////////////////////////////////////////////
+////////////////////////////
 
 function mobAI(){
-
 mobs.forEach(m=>{
-
-let d = player.position.distanceTo(m.position)
-
+let d=player.position.distanceTo(m.position)
 if(d<20){
-
-let nx = m.position.x + (player.position.x - m.position.x)*0.01
-let nz = m.position.z + (player.position.z - m.position.z)*0.01
-
-if(!checkCollision(nx,nz)){
-m.position.x = nx
-m.position.z = nz
+m.position.x+=(player.position.x-m.position.x)*0.01
+m.position.z+=(player.position.z-m.position.z)*0.01
 }
-
+if(d<2 && !data.dead){
+data.hp-=0.2
 }
-
-if(d<2){
-data.hp -= 0.1
-}
-
 })
-
 }
 
-//////////////////////////////////////////////////
-// MINIMAP
-//////////////////////////////////////////////////
-
-function updateMap(){
-
-let map = document.getElementById("map")
-
-map.innerHTML =
-"X:"+Math.floor(player.position.x)+"<br>"+
-"Z:"+Math.floor(player.position.z)+"<br>"+
-"Mobs:"+mobs.length
-
-}
-
-//////////////////////////////////////////////////
-// LOOP
-//////////////////////////////////////////////////
+////////////////////////////
+// GAME LOOP
+////////////////////////////
 
 camera.position.set(0,6,10)
 
 function loop(){
-
 requestAnimationFrame(loop)
 
-// move + collision
-let nx = player.position.x + mx*0.3
-let nz = player.position.z + mz*0.3
-
-if(!checkCollision(nx,nz)){
-player.position.x = nx
-player.position.z = nz
+// chết
+if(data.hp<=0){
+data.dead=true
+setTimeout(()=>{
+data.hp=data.maxHp
+player.position.set(0,1,0)
+data.dead=false
+},2000)
 }
 
+// move
+let speed = data.inCar?0.6:0.3
+player.position.x += mx*speed
+player.position.z += mz*speed
+
+// car follow
+if(data.inCar){
+car.position.copy(player.position)
+car.position.y=0.5
+}
+
+// nhặt đồ
+items.forEach((i,index)=>{
+if(player.position.distanceTo(i.position)<2){
+if(i.type=="hp") data.hp=Math.min(data.hp+20,data.maxHp)
+if(i.type=="gold") data.gold+=5
+scene.remove(i)
+items.splice(index,1)
+spawnItem()
+}
+})
+
 // camera
-camera.position.x = player.position.x
-camera.position.z = player.position.z+10
+camera.position.x=player.position.x
+camera.position.z=player.position.z+10
 camera.lookAt(player.position)
 
 // AI
 mobAI()
 
-// player HP bar
-document.getElementById("hpBar").style.width =
-(data.hp/data.maxHp*100)+"%"
-
-// mob HP bar
-mobs.forEach(m=>{
-
-let pos = m.position.clone()
-pos.project(camera)
-
-let x = (pos.x*0.5+0.5)*innerWidth
-let y = (-pos.y*0.5+0.5)*innerHeight
-
-m.bar.style.left = x+"px"
-m.bar.style.top = y+"px"
-
-m.fill.style.width = (m.hp/m.maxHp*100)+"%"
-
-})
+// UI
+hpBar.style.width=(data.hp/data.maxHp*100)+"%"
+lv.innerText=data.lv
+gold.innerText=data.gold
 
 // map
-updateMap()
+map.innerHTML="X:"+player.position.x.toFixed(0)+" Z:"+player.position.z.toFixed(0)
 
 renderer.render(scene,camera)
-
 }
 
 loop()
