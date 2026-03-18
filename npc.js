@@ -44,3 +44,14 @@ class NPC{
     }
   }
 }
+if(this.type==="faction"){
+  alert("Bạn đã vào lãnh địa môn phái!");
+
+  if(player.faction !== this.faction){
+    let join = confirm("Gia nhập môn phái này?");
+    if(join){
+      player.faction = this.faction;
+      alert("Gia nhập thành công!");
+    }
+  }
+}
