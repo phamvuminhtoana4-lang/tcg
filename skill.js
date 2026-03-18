@@ -121,3 +121,31 @@ function updateProjectiles(){
     });
   });
 }
+const FACTION_SKILLS = {
+  "Thiếu Lâm": ["Đấm", "La Hán Quyền"],
+  "Võ Đang": ["Kiếm Khí", "Thái Cực"],
+  "Nga My": ["Hồi Máu", "Kiếm Hoa"],
+  "Cái Bang": ["Chưởng", "Say Rượu"],
+  "Đường Môn": ["Ám Khí", "Độc"],
+  "Thiên Nhẫn": ["Lửa", "Thiêu Đốt"],
+  "Minh Giáo": ["Hỏa Diệm", "Nổ"],
+  "Côn Lôn": ["Băng", "Đóng Băng"],
+  "Tiêu Dao": ["Gió", "Dịch Chuyển"]
+};
+
+function loadSkillsUI(){
+  skillsDiv.innerHTML = "";
+
+  let skills = FACTION_SKILLS[player.faction] || ["Đánh thường"];
+
+  skills.forEach(s=>{
+    let btn = document.createElement("button");
+    btn.innerText = s;
+
+    btn.onclick = ()=>{
+      useSkill(s);
+    };
+
+    skillsDiv.appendChild(btn);
+  });
+}
