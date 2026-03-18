@@ -1,0 +1,5 @@
+body{margin:0;background:#000;color:#fff}
+canvas{background:#111}
+#hp,#mana{width:200px;height:15px;background:#333}
+#hp div{background:red;height:100%}
+#mana div{background:blue;height:100%}
