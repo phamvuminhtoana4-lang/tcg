@@ -138,3 +138,12 @@ function loop(){
   uiUpdate();
   requestAnimationFrame(loop);
 }
+function useSkill(name){
+  projectiles.push({
+    x:player.x,
+    y:player.y,
+    dx:lastDir.x*5,
+    dy:lastDir.y*5,
+    dmg:10
+  });
+}
