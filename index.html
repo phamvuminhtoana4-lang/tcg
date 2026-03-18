@@ -2,53 +2,32 @@
 <html lang="vi">
 <head>
 <meta charset="UTF-8">
-<title>KIẾM HIỆP GOD ENGINE</title>
+<title>GAME PHIÊU LƯU TOP-DOWN</title>
 
 <style>
-body{margin:0;background:#0b0b0b;color:white;font-family:Arial}
-canvas{display:block;margin:auto;background:#111}
+body{margin:0;background:#000;color:white;font-family:Arial}
+canvas{display:block;margin:auto}
 
 #ui{
- position:fixed;
- top:10px;left:10px;
- background:#000c;
- padding:10px;
- border-radius:10px;
- width:260px;
+ position:fixed;top:10px;left:10px;
+ background:#000c;padding:10px;border-radius:10px;width:260px
 }
 
-.bar{
- width:100%;
- height:15px;
- background:#222;
- border-radius:10px;
- overflow:hidden;
- margin-bottom:5px;
-}
+.bar{height:12px;background:#222;border-radius:6px;margin-bottom:5px}
 .hp{background:red;height:100%}
-.mana{background:blue;height:100%}
+.mp{background:blue;height:100%}
 .exp{background:lime;height:100%}
 
 #inventory{
  display:grid;
  grid-template-columns:repeat(5,1fr);
- gap:5px;
- margin-top:10px;
+ gap:4px;margin-top:10px
 }
-.slot{
- width:40px;height:40px;
- background:#222;
- border:1px solid #555;
- text-align:center;
- font-size:10px;
-}
+.slot{height:40px;background:#222;border:1px solid #555;font-size:10px;text-align:center}
 
 #minimap{
- position:fixed;
- right:10px;top:10px;
- width:150px;height:150px;
- background:#000a;
- border:2px solid #555;
+ position:fixed;right:10px;top:10px;
+ width:150px;height:150px;background:#000;border:2px solid #555
 }
 </style>
 </head>
@@ -56,12 +35,11 @@ canvas{display:block;margin:auto;background:#111}
 <body>
 
 <div id="ui">
-HP<div class="bar"><div id="hpBar" class="hp"></div></div>
-MP<div class="bar"><div id="mpBar" class="mana"></div></div>
-EXP<div class="bar"><div id="expBar" class="exp"></div></div>
-
+HP<div class="bar"><div id="hp" class="hp"></div></div>
+MP<div class="bar"><div id="mp" class="mp"></div></div>
+EXP<div class="bar"><div id="exp" class="exp"></div></div>
 <p>Lv: <span id="lv">1</span></p>
-
+<p id="quest"></p>
 <div id="inventory"></div>
 </div>
 
@@ -69,11 +47,9 @@ EXP<div class="bar"><div id="expBar" class="exp"></div></div>
 <canvas id="game" width="1000" height="600"></canvas>
 
 <script>
-const c=document.getElementById("game");
-const ctx=c.getContext("2d");
-
-const mini=document.getElementById("minimap");
-const mctx=mini.getContext("2d");
+// ===== SETUP =====
+const c=game,ctx=c.getContext("2d");
+const mini=minimap,mctx=mini.getContext("2d");
 
 let mouse={x:0,y:0};
 c.onmousemove=e=>{
@@ -81,233 +57,196 @@ c.onmousemove=e=>{
  mouse.x=e.clientX-r.left;
  mouse.y=e.clientY-r.top;
 };
-  // WORLD
-const world={w:6000,h:6000};
-let cam={x:0,y:0};
 
-// PLAYER FULL STATS
+// ===== WORLD =====
+const tile=40;
+const world={w:6000,h:6000};
+let map=[];
+
+for(let y=0;y<150;y++){
+ let row=[];
+ for(let x=0;x<150;x++){
+  let r=Math.random();
+  if(r<0.1) row.push("water");
+  else if(r<0.2) row.push("rock");
+  else if(r<0.4) row.push("forest");
+  else row.push("grass");
+ }
+ map.push(row);
+}
+
+function block(x,y){
+ let tx=Math.floor(x/tile);
+ let ty=Math.floor(y/tile);
+ if(!map[ty]||!map[ty][tx]) return true;
+ return ["rock","water"].includes(map[ty][tx]);
+}
+
+// ===== PLAYER =====
 let p={
  x:3000,y:3000,
- hp:200,maxHp:200,
+ hp:200,max:200,
  mp:100,maxMp:100,
- lv:1,exp:0,nextExp:100,
-
- dmg:20,
- crit:0.2,
- speed:4,
- armor:5,
-
- inv:Array(25).fill(null),
- equip:{
-  weapon:null,
-  armor:null
- }
+ lv:1,exp:0,next:100,
+ dmg:20,speed:4,
+ inv:Array(25).fill(null)
 };
 
-// INPUT
-let keys={};
-document.onkeydown=e=>keys[e.key.toLowerCase()]=true;
-document.onkeyup=e=>keys[e.key.toLowerCase()]=false;
+let cam={x:0,y:0};
 
-// INVENTORY UI
-function renderInv(){
- let div=document.getElementById("inventory");
+// ===== INPUT =====
+let keys={};
+onkeydown=e=>keys[e.key.toLowerCase()]=true;
+onkeyup=e=>keys[e.key.toLowerCase()]=false;
+
+// ===== ENEMY =====
+let enemies=[];
+function spawn(){
+ let x,y;
+ do{
+  x=Math.random()*world.w;
+  y=Math.random()*world.h;
+ }while(block(x,y));
+
+ enemies.push({
+  x,y,
+  hp:100,max:100,
+  type:["melee","ranged"][Math.random()*2|0],
+  speed:2
+ });
+}
+for(let i=0;i<30;i++) spawn();
+
+// ===== SKILL =====
+let bullets=[];
+onclick=()=>{
+ let tx=mouse.x+cam.x,ty=mouse.y+cam.y;
+ let dx=(tx-p.x)/20,dy=(ty-p.y)/20;
+
+ bullets.push({x:p.x,y:p.y,dx,dy,life:60});
+};
+
+// ===== DROP =====
+let drops=[];
+
+// ===== QUEST =====
+let quest={kill:0,need:10};
+
+// ===== INVENTORY =====
+function addItem(it){
+ let i=p.inv.findIndex(v=>!v);
+ if(i!=-1) p.inv[i]=it;
+}
+
+function drawInv(){
+ let div=inventory;
  div.innerHTML="";
  p.inv.forEach(it=>{
   div.innerHTML+=`<div class="slot">${it?it.type:""}</div>`;
  });
 }
 
-// ADD ITEM
-function addItem(item){
- let idx=p.inv.findIndex(i=>!i);
- if(idx!==-1) p.inv[idx]=item;
-
- if(item.type==="weapon"){
-  p.equip.weapon=item;
-  p.dmg+=item.power;
- }
-}
-  let enemies=[];
-
-// ENEMY TYPES
-function spawnEnemy(type="melee"){
- let e={
-  x:Math.random()*world.w,
-  y:Math.random()*world.h,
-  type,
-  hp:100,maxHp:100,
-  speed:2,
-  dmg:0.3,
-  range:30
- };
-
- if(type==="ranged"){
-  e.range=200;
- }
- if(type==="elite"){
-  e.hp=300;e.dmg=0.6;
- }
- if(type==="boss"){
-  e.hp=2000;e.dmg=1;
- }
-
- enemies.push(e);
-}
-
-// SPAWN
-for(let i=0;i<30;i++){
- let t=["melee","ranged","elite"][Math.floor(Math.random()*3)];
- spawnEnemy(t);
-}
-spawnEnemy("boss");
-
-// AI UPDATE
-function updateEnemy(e){
- let dx=p.x-e.x,dy=p.y-e.y;
- let d=Math.hypot(dx,dy);
-
- if(d<500){
-  e.x+=dx/d*e.speed;
-  e.y+=dy/d*e.speed;
- }
-
- if(d<e.range){
-  p.hp-=e.dmg;
- }
-}
-  let effects=[];
-let projectiles=[];
-
-// 30 SKILL ADVANCED
-let keysList="1234567890qwertyuiopasdfghjklzxcvbnm".split("").slice(0,30);
-let skills={};
-
-keysList.forEach((k,i)=>{
- skills[k]={
-  cd:300+i*30,
-  last:0,
-  type:i%5,
-  speed:5+i*0.5,
-  color:`hsl(${i*12},100%,50%)`,
-  dmg:10+i*4
- };
-});
-
-// USE SKILL
-document.addEventListener("keydown",e=>{
- let k=e.key.toLowerCase();
- let s=skills[k];
- if(!s) return;
-
- if(Date.now()-s.last<s.cd) return;
- s.last=Date.now();
-
- let tx=mouse.x+cam.x;
- let ty=mouse.y+cam.y;
-
- // PROJECTILE
- projectiles.push({
-  x:p.x,y:p.y,
-  dx:(tx-p.x)/20,
-  dy:(ty-p.y)/20,
-  color:s.color,
-  dmg:s.dmg,
-  life:60
- });
-
- // EFFECT
- effects.push({
-  x:tx,y:ty,
-  r:10,
-  color:s.color,
-  life:20
- });
-});
-  function update(){
+// ===== UPDATE =====
+function update(){
 
  // MOVE
- if(keys["w"]) p.y-=p.speed;
- if(keys["s"]) p.y+=p.speed;
- if(keys["a"]) p.x-=p.speed;
- if(keys["d"]) p.x+=p.speed;
+ let nx=p.x,ny=p.y;
+ if(keys["w"]) ny-=p.speed;
+ if(keys["s"]) ny+=p.speed;
+ if(keys["a"]) nx-=p.speed;
+ if(keys["d"]) nx+=p.speed;
+
+ if(!block(nx,p.y)) p.x=nx;
+ if(!block(p.x,ny)) p.y=ny;
 
  cam.x=p.x-c.width/2;
  cam.y=p.y-c.height/2;
 
- // ENEMY AI
+ // ENEMY
  enemies.forEach(e=>{
   let dx=p.x-e.x,dy=p.y-e.y;
   let d=Math.hypot(dx,dy);
-
-  if(d<500){
+  if(d<400){
    e.x+=dx/d*e.speed;
    e.y+=dy/d*e.speed;
   }
-
-  if(d<30) p.hp-=e.dmg;
+  if(d<30) p.hp-=0.2;
  });
 
- // SKILL EFFECT
- effects.forEach((ef,i)=>{
-  ef.life--;
+ // BULLET
+ bullets.forEach((b,i)=>{
+  b.x+=b.dx;b.y+=b.dy;b.life--;
 
   enemies.forEach(e=>{
-   let d=Math.hypot(e.x-ef.tx,e.y-ef.ty);
-
-   if(ef.type===0 && d<ef.range) e.hp-=ef.dmg;
-   if(ef.type===1){ef.r+=6;if(Math.hypot(e.x-ef.x,e.y-ef.y)<ef.r) e.hp-=ef.dmg;}
-   if(ef.type===2){e.hp-=ef.dmg*0.2;}
-   if(ef.type===3){
-    let sx=p.x+Math.cos(ef.life)*60;
-    let sy=p.y+Math.sin(ef.life)*60;
-    if(Math.hypot(e.x-sx,e.y-sy)<30) e.hp-=ef.dmg;
-   }
-   if(ef.type===4){
-    p.x+=(ef.tx-p.x)/8;
-    p.y+=(ef.ty-p.y)/8;
-   }
-   if(ef.type===5){
-    if(d<ef.range*2) e.hp-=ef.dmg/2;
+   if(Math.hypot(e.x-b.x,e.y-b.y)<20){
+    e.hp-=p.dmg;
+    b.life=0;
    }
   });
 
-  if(ef.life<=0) effects.splice(i,1);
+  if(b.life<=0) bullets.splice(i,1);
  });
 
  // KILL
  enemies=enemies.filter(e=>{
   if(e.hp<=0){
-   dropItem(e.x,e.y);
-   p.exp+=10;
-   p.lv++;
-   spawnEnemy();
+   quest.kill++;
+   drops.push({x:e.x,y:e.y,type:"hp"});
+   spawn();
    return false;
   }
   return true;
  });
 
- // PICK ITEM
- drops.forEach((it,i)=>{
-  if(Math.hypot(p.x-it.x,p.y-it.y)<30){
-   if(it.type==="hp") p.hp=Math.min(p.max,p.hp+30);
-   else addItem(it);
+ // PICK
+ drops.forEach((d,i)=>{
+  if(Math.hypot(p.x-d.x,p.y-d.y)<30){
+   p.hp=Math.min(p.max,p.hp+30);
    drops.splice(i,1);
   }
  });
 
- if(p.hp<=0){
-  alert("💀 Respawn");
-  p.hp=p.max;
-  p.x=2500;p.y=2500;
+ // LEVEL
+ if(p.exp>=p.next){
+  p.exp=0;p.lv++;p.next*=1.5;
  }
 
- document.getElementById("hpBar").style.width=(p.hp/p.max*100)+"%";
- document.getElementById("lv").innerText=p.lv;
+ // DEATH
+ if(p.hp<=0){
+  alert("💀 Bạn đã chết");
+  p.hp=p.max;
+  p.x=3000;p.y=3000;
+ }
+
+ // UI
+ hp.style.width=p.hp/p.max*100+"%";
+ mp.style.width=p.mp/p.maxMp*100+"%";
+ exp.style.width=p.exp/p.next*100+"%";
+ lv.innerText=p.lv;
+ quest.innerText=`Nhiệm vụ: ${quest.kill}/${quest.need}`;
+ drawInv();
 }
 
+// ===== DRAW =====
 function draw(){
  ctx.clearRect(0,0,c.width,c.height);
+
+ // MAP
+ for(let y=0;y<map.length;y++){
+  for(let x=0;x<map[y].length;x++){
+   let t=map[y][x];
+   let px=x*tile-cam.x,py=y*tile-cam.y;
+
+   if(px<-40||py<-40||px>c.width||py>c.height) continue;
+
+   ctx.fillStyle=
+    t==="grass"?"#2ecc71":
+    t==="forest"?"#145a32":
+    t==="rock"?"#777":"#3498db";
+
+   ctx.fillRect(px,py,tile,tile);
+  }
+ }
 
  // PLAYER
  ctx.fillStyle="cyan";
@@ -315,38 +254,36 @@ function draw(){
 
  // ENEMY
  enemies.forEach(e=>{
-  ctx.fillStyle=e.type==="boss"?"purple":"red";
+  ctx.fillStyle=e.type==="ranged"?"yellow":"red";
   ctx.fillRect(e.x-cam.x,e.y-cam.y,20,20);
-
-  ctx.fillStyle="black";
-  ctx.fillRect(e.x-cam.x,e.y-cam.y-10,20,5);
-  ctx.fillStyle="lime";
-  ctx.fillRect(e.x-cam.x,e.y-cam.y-10,20*(e.hp/e.max),5);
  });
 
- // EFFECT
- effects.forEach(ef=>{
-  ctx.strokeStyle=ef.color;
-  ctx.fillStyle=ef.color;
-
-  ctx.beginPath();
-  ctx.arc(ef.tx-cam.x,ef.ty-cam.y,10,0,6.28);
-  ctx.stroke();
+ // BULLET
+ ctx.fillStyle="white";
+ bullets.forEach(b=>{
+  ctx.fillRect(b.x-cam.x,b.y-cam.y,5,5);
  });
 
  // DROP
- drops.forEach(it=>{
-  ctx.fillStyle=it.type==="hp"?"yellow":"orange";
-  ctx.fillRect(it.x-cam.x,it.y-cam.y,10,10);
+ ctx.fillStyle="orange";
+ drops.forEach(d=>{
+  ctx.fillRect(d.x-cam.x,d.y-cam.y,10,10);
  });
+
+ // MINIMAP
+ mctx.clearRect(0,0,150,150);
+ mctx.fillStyle="white";
+ mctx.fillRect(p.x/world.w*150,p.y/world.h*150,4,4);
 }
 
+// ===== LOOP =====
 function loop(){
  update();
  draw();
  requestAnimationFrame(loop);
 }
 loop();
+
 </script>
 </body>
 </html>
