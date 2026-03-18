@@ -2,297 +2,351 @@
 <html lang="vi">
 <head>
 <meta charset="UTF-8">
-<title>Game Open World Mini</title>
+<title>KIẾM HIỆP GOD ENGINE</title>
 
 <style>
-body{margin:0;overflow:hidden;background:black;font-family:sans-serif}
+body{margin:0;background:#0b0b0b;color:white;font-family:Arial}
+canvas{display:block;margin:auto;background:#111}
 
-/* UI */
 #ui{
-position:absolute;top:10px;left:10px;color:white;z-index:10
+ position:fixed;
+ top:10px;left:10px;
+ background:#000c;
+ padding:10px;
+ border-radius:10px;
+ width:260px;
 }
 
-.bar{width:160px;height:12px;background:red}
-.fill{height:100%;background:lime}
+.bar{
+ width:100%;
+ height:15px;
+ background:#222;
+ border-radius:10px;
+ overflow:hidden;
+ margin-bottom:5px;
+}
+.hp{background:red;height:100%}
+.mana{background:blue;height:100%}
+.exp{background:lime;height:100%}
 
-/* joystick */
-#joy{
-position:absolute;bottom:40px;left:40px;
-width:120px;height:120px;
-background:rgba(255,255,255,0.1);
-border-radius:50%;
+#inventory{
+ display:grid;
+ grid-template-columns:repeat(5,1fr);
+ gap:5px;
+ margin-top:10px;
 }
-#stick{
-width:60px;height:60px;background:white;border-radius:50%;
-position:absolute;left:30px;top:30px;
-}
-
-/* btn */
-#atk{
-position:absolute;right:40px;bottom:40px;
-width:70px;height:70px;background:red;color:white;border-radius:50%
-}
-#use{
-position:absolute;right:120px;bottom:120px;
-width:70px;height:70px;background:orange;border-radius:50%
-}
-
-/* map */
-#map{
-position:absolute;top:10px;right:10px;
-width:120px;height:120px;background:black;color:white;font-size:10px
+.slot{
+ width:40px;height:40px;
+ background:#222;
+ border:1px solid #555;
+ text-align:center;
+ font-size:10px;
 }
 
+#minimap{
+ position:fixed;
+ right:10px;top:10px;
+ width:150px;height:150px;
+ background:#000a;
+ border:2px solid #555;
+}
 </style>
 </head>
 
 <body>
 
 <div id="ui">
-HP
-<div class="bar"><div id="hpBar" class="fill"></div></div>
-LV: <span id="lv"></span>
-Gold: <span id="gold"></span>
+HP<div class="bar"><div id="hpBar" class="hp"></div></div>
+MP<div class="bar"><div id="mpBar" class="mana"></div></div>
+EXP<div class="bar"><div id="expBar" class="exp"></div></div>
+
+<p>Lv: <span id="lv">1</span></p>
+
+<div id="inventory"></div>
 </div>
 
-<div id="joy"><div id="stick"></div></div>
-<button id="atk">⚔</button>
-<button id="use">🚗</button>
-
-<div id="map"></div>
-
-<script src="https://cdn.jsdelivr.net/npm/three@0.158/build/three.min.js"></script>
+<canvas id="minimap"></canvas>
+<canvas id="game" width="1000" height="600"></canvas>
 
 <script>
+const c=document.getElementById("game");
+const ctx=c.getContext("2d");
 
-////////////////////////////
-// SETUP + AUTO FIT
-////////////////////////////
+const mini=document.getElementById("minimap");
+const mctx=mini.getContext("2d");
 
-let scene = new THREE.Scene()
-let camera = new THREE.PerspectiveCamera(75,innerWidth/innerHeight,0.1,1000)
-let renderer = new THREE.WebGLRenderer()
-renderer.setSize(innerWidth,innerHeight)
-document.body.appendChild(renderer.domElement)
+let mouse={x:0,y:0};
+c.onmousemove=e=>{
+ let r=c.getBoundingClientRect();
+ mouse.x=e.clientX-r.left;
+ mouse.y=e.clientY-r.top;
+};
+  // WORLD
+const world={w:6000,h:6000};
+let cam={x:0,y:0};
 
-window.addEventListener("resize",()=>{
-camera.aspect = innerWidth/innerHeight
-camera.updateProjectionMatrix()
-renderer.setSize(innerWidth,innerHeight)
-})
+// PLAYER FULL STATS
+let p={
+ x:3000,y:3000,
+ hp:200,maxHp:200,
+ mp:100,maxMp:100,
+ lv:1,exp:0,nextExp:100,
 
-let light = new THREE.DirectionalLight(0xffffff,1)
-light.position.set(10,20,10)
-scene.add(light)
+ dmg:20,
+ crit:0.2,
+ speed:4,
+ armor:5,
 
-////////////////////////////
-// MAP
-////////////////////////////
+ inv:Array(25).fill(null),
+ equip:{
+  weapon:null,
+  armor:null
+ }
+};
 
-let ground = new THREE.Mesh(
-new THREE.PlaneGeometry(300,300),
-new THREE.MeshLambertMaterial({color:0x228B22})
-)
-ground.rotation.x=-Math.PI/2
-scene.add(ground)
+// INPUT
+let keys={};
+document.onkeydown=e=>keys[e.key.toLowerCase()]=true;
+document.onkeyup=e=>keys[e.key.toLowerCase()]=false;
 
-////////////////////////////
-// PLAYER
-////////////////////////////
-
-let player = new THREE.Mesh(
-new THREE.BoxGeometry(1,2,1),
-new THREE.MeshLambertMaterial({color:0x00f})
-)
-player.position.y=1
-scene.add(player)
-
-let data = {hp:100,maxHp:100,lv:1,gold:0,atk:10,dead:false,inCar:false}
-
-////////////////////////////
-// HOUSE
-////////////////////////////
-
-let house = new THREE.Mesh(
-new THREE.BoxGeometry(6,4,6),
-new THREE.MeshLambertMaterial({color:0x8B4513})
-)
-house.position.set(10,2,10)
-scene.add(house)
-
-////////////////////////////
-// CAR
-////////////////////////////
-
-let car = new THREE.Mesh(
-new THREE.BoxGeometry(2,1,4),
-new THREE.MeshLambertMaterial({color:0xffff00})
-)
-car.position.set(-10,0.5,10)
-scene.add(car)
-
-////////////////////////////
-// ITEMS
-////////////////////////////
-
-let items=[]
-function spawnItem(){
-let i = new THREE.Mesh(
-new THREE.SphereGeometry(0.5),
-new THREE.MeshLambertMaterial({color:0x00ff00})
-)
-i.position.set((Math.random()-0.5)*100,1,(Math.random()-0.5)*100)
-i.type = Math.random()>0.5?"hp":"gold"
-scene.add(i)
-items.push(i)
-}
-for(let i=0;i<10;i++) spawnItem()
-
-////////////////////////////
-// MOB
-////////////////////////////
-
-let mobs=[]
-function spawnMob(){
-let m = new THREE.Mesh(
-new THREE.BoxGeometry(1,2,1),
-new THREE.MeshLambertMaterial({color:0xf00})
-)
-m.position.set((Math.random()-0.5)*100,1,(Math.random()-0.5)*100)
-m.hp=40
-scene.add(m)
-mobs.push(m)
-}
-for(let i=0;i<8;i++) spawnMob()
-
-////////////////////////////
-// JOYSTICK
-////////////////////////////
-
-let mx=0,mz=0,drag=false
-joy.ontouchstart=()=>drag=true
-joy.ontouchend=()=>{drag=false;mx=0;mz=0;stick.style.left="30px";stick.style.top="30px"}
-
-joy.ontouchmove=e=>{
-if(!drag)return
-let r=joy.getBoundingClientRect()
-let x=e.touches[0].clientX-r.left-60
-let y=e.touches[0].clientY-r.top-60
-let d=Math.sqrt(x*x+y*y)
-if(d>40){x=x/d*40;y=y/d*40}
-stick.style.left=(x+30)+"px"
-stick.style.top=(y+30)+"px"
-mx=x/40
-mz=y/40
+// INVENTORY UI
+function renderInv(){
+ let div=document.getElementById("inventory");
+ div.innerHTML="";
+ p.inv.forEach(it=>{
+  div.innerHTML+=`<div class="slot">${it?it.type:""}</div>`;
+ });
 }
 
-////////////////////////////
-// ATTACK
-////////////////////////////
+// ADD ITEM
+function addItem(item){
+ let idx=p.inv.findIndex(i=>!i);
+ if(idx!==-1) p.inv[idx]=item;
 
-atk.onclick=()=>{
-mobs.forEach((m,i)=>{
-if(player.position.distanceTo(m.position)<3){
-m.hp-=data.atk
-if(m.hp<=0){
-scene.remove(m)
-mobs.splice(i,1)
-data.gold+=10
-spawnMob()
+ if(item.type==="weapon"){
+  p.equip.weapon=item;
+  p.dmg+=item.power;
+ }
 }
-}
-})
-}
+  let enemies=[];
 
-////////////////////////////
-// USE (XE)
-////////////////////////////
+// ENEMY TYPES
+function spawnEnemy(type="melee"){
+ let e={
+  x:Math.random()*world.w,
+  y:Math.random()*world.h,
+  type,
+  hp:100,maxHp:100,
+  speed:2,
+  dmg:0.3,
+  range:30
+ };
 
-use.onclick=()=>{
-if(player.position.distanceTo(car.position)<3){
-data.inCar=!data.inCar
-}
-}
+ if(type==="ranged"){
+  e.range=200;
+ }
+ if(type==="elite"){
+  e.hp=300;e.dmg=0.6;
+ }
+ if(type==="boss"){
+  e.hp=2000;e.dmg=1;
+ }
 
-////////////////////////////
-// AI
-////////////////////////////
-
-function mobAI(){
-mobs.forEach(m=>{
-let d=player.position.distanceTo(m.position)
-if(d<20){
-m.position.x+=(player.position.x-m.position.x)*0.01
-m.position.z+=(player.position.z-m.position.z)*0.01
-}
-if(d<2 && !data.dead){
-data.hp-=0.2
-}
-})
+ enemies.push(e);
 }
 
-////////////////////////////
-// GAME LOOP
-////////////////////////////
+// SPAWN
+for(let i=0;i<30;i++){
+ let t=["melee","ranged","elite"][Math.floor(Math.random()*3)];
+ spawnEnemy(t);
+}
+spawnEnemy("boss");
 
-camera.position.set(0,6,10)
+// AI UPDATE
+function updateEnemy(e){
+ let dx=p.x-e.x,dy=p.y-e.y;
+ let d=Math.hypot(dx,dy);
+
+ if(d<500){
+  e.x+=dx/d*e.speed;
+  e.y+=dy/d*e.speed;
+ }
+
+ if(d<e.range){
+  p.hp-=e.dmg;
+ }
+}
+  let effects=[];
+let projectiles=[];
+
+// 30 SKILL ADVANCED
+let keysList="1234567890qwertyuiopasdfghjklzxcvbnm".split("").slice(0,30);
+let skills={};
+
+keysList.forEach((k,i)=>{
+ skills[k]={
+  cd:300+i*30,
+  last:0,
+  type:i%5,
+  speed:5+i*0.5,
+  color:`hsl(${i*12},100%,50%)`,
+  dmg:10+i*4
+ };
+});
+
+// USE SKILL
+document.addEventListener("keydown",e=>{
+ let k=e.key.toLowerCase();
+ let s=skills[k];
+ if(!s) return;
+
+ if(Date.now()-s.last<s.cd) return;
+ s.last=Date.now();
+
+ let tx=mouse.x+cam.x;
+ let ty=mouse.y+cam.y;
+
+ // PROJECTILE
+ projectiles.push({
+  x:p.x,y:p.y,
+  dx:(tx-p.x)/20,
+  dy:(ty-p.y)/20,
+  color:s.color,
+  dmg:s.dmg,
+  life:60
+ });
+
+ // EFFECT
+ effects.push({
+  x:tx,y:ty,
+  r:10,
+  color:s.color,
+  life:20
+ });
+});
+  function update(){
+
+ // MOVE
+ if(keys["w"]) p.y-=p.speed;
+ if(keys["s"]) p.y+=p.speed;
+ if(keys["a"]) p.x-=p.speed;
+ if(keys["d"]) p.x+=p.speed;
+
+ cam.x=p.x-c.width/2;
+ cam.y=p.y-c.height/2;
+
+ // ENEMY AI
+ enemies.forEach(e=>{
+  let dx=p.x-e.x,dy=p.y-e.y;
+  let d=Math.hypot(dx,dy);
+
+  if(d<500){
+   e.x+=dx/d*e.speed;
+   e.y+=dy/d*e.speed;
+  }
+
+  if(d<30) p.hp-=e.dmg;
+ });
+
+ // SKILL EFFECT
+ effects.forEach((ef,i)=>{
+  ef.life--;
+
+  enemies.forEach(e=>{
+   let d=Math.hypot(e.x-ef.tx,e.y-ef.ty);
+
+   if(ef.type===0 && d<ef.range) e.hp-=ef.dmg;
+   if(ef.type===1){ef.r+=6;if(Math.hypot(e.x-ef.x,e.y-ef.y)<ef.r) e.hp-=ef.dmg;}
+   if(ef.type===2){e.hp-=ef.dmg*0.2;}
+   if(ef.type===3){
+    let sx=p.x+Math.cos(ef.life)*60;
+    let sy=p.y+Math.sin(ef.life)*60;
+    if(Math.hypot(e.x-sx,e.y-sy)<30) e.hp-=ef.dmg;
+   }
+   if(ef.type===4){
+    p.x+=(ef.tx-p.x)/8;
+    p.y+=(ef.ty-p.y)/8;
+   }
+   if(ef.type===5){
+    if(d<ef.range*2) e.hp-=ef.dmg/2;
+   }
+  });
+
+  if(ef.life<=0) effects.splice(i,1);
+ });
+
+ // KILL
+ enemies=enemies.filter(e=>{
+  if(e.hp<=0){
+   dropItem(e.x,e.y);
+   p.exp+=10;
+   p.lv++;
+   spawnEnemy();
+   return false;
+  }
+  return true;
+ });
+
+ // PICK ITEM
+ drops.forEach((it,i)=>{
+  if(Math.hypot(p.x-it.x,p.y-it.y)<30){
+   if(it.type==="hp") p.hp=Math.min(p.max,p.hp+30);
+   else addItem(it);
+   drops.splice(i,1);
+  }
+ });
+
+ if(p.hp<=0){
+  alert("💀 Respawn");
+  p.hp=p.max;
+  p.x=2500;p.y=2500;
+ }
+
+ document.getElementById("hpBar").style.width=(p.hp/p.max*100)+"%";
+ document.getElementById("lv").innerText=p.lv;
+}
+
+function draw(){
+ ctx.clearRect(0,0,c.width,c.height);
+
+ // PLAYER
+ ctx.fillStyle="cyan";
+ ctx.fillRect(p.x-cam.x,p.y-cam.y,20,20);
+
+ // ENEMY
+ enemies.forEach(e=>{
+  ctx.fillStyle=e.type==="boss"?"purple":"red";
+  ctx.fillRect(e.x-cam.x,e.y-cam.y,20,20);
+
+  ctx.fillStyle="black";
+  ctx.fillRect(e.x-cam.x,e.y-cam.y-10,20,5);
+  ctx.fillStyle="lime";
+  ctx.fillRect(e.x-cam.x,e.y-cam.y-10,20*(e.hp/e.max),5);
+ });
+
+ // EFFECT
+ effects.forEach(ef=>{
+  ctx.strokeStyle=ef.color;
+  ctx.fillStyle=ef.color;
+
+  ctx.beginPath();
+  ctx.arc(ef.tx-cam.x,ef.ty-cam.y,10,0,6.28);
+  ctx.stroke();
+ });
+
+ // DROP
+ drops.forEach(it=>{
+  ctx.fillStyle=it.type==="hp"?"yellow":"orange";
+  ctx.fillRect(it.x-cam.x,it.y-cam.y,10,10);
+ });
+}
 
 function loop(){
-requestAnimationFrame(loop)
-
-// chết
-if(data.hp<=0){
-data.dead=true
-setTimeout(()=>{
-data.hp=data.maxHp
-player.position.set(0,1,0)
-data.dead=false
-},2000)
+ update();
+ draw();
+ requestAnimationFrame(loop);
 }
-
-// move
-let speed = data.inCar?0.6:0.3
-player.position.x += mx*speed
-player.position.z += mz*speed
-
-// car follow
-if(data.inCar){
-car.position.copy(player.position)
-car.position.y=0.5
-}
-
-// nhặt đồ
-items.forEach((i,index)=>{
-if(player.position.distanceTo(i.position)<2){
-if(i.type=="hp") data.hp=Math.min(data.hp+20,data.maxHp)
-if(i.type=="gold") data.gold+=5
-scene.remove(i)
-items.splice(index,1)
-spawnItem()
-}
-})
-
-// camera
-camera.position.x=player.position.x
-camera.position.z=player.position.z+10
-camera.lookAt(player.position)
-
-// AI
-mobAI()
-
-// UI
-hpBar.style.width=(data.hp/data.maxHp*100)+"%"
-lv.innerText=data.lv
-gold.innerText=data.gold
-
-// map
-map.innerHTML="X:"+player.position.x.toFixed(0)+" Z:"+player.position.z.toFixed(0)
-
-renderer.render(scene,camera)
-}
-
-loop()
-
+loop();
 </script>
 </body>
 </html>
